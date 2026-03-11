@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Калькулятор сложности боя</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>Калькулятор сложности боя</h1>
+<div class="character-panel">
+  <table id="char-table">
+    <thead>
+    <tr>
+      <th>Имя</th>
+      <th>Сторона</th>
+      <th>STR</th>
+      <th>END</th>
+      <th>PER</th>
+      <th>REF</th>
+      <th>MAG</th>
+      <th>WIL</th>
+      <th>Тип оружия</th>
+      <th>Размер</th>
+      <th>Фехт.</th>
+      <th>Парное</th>
+      <th>Мех.</th>
+      <th>Навык парн.</th>
+      <th>Тип атаки</th>
+      <th>Броня</th>
+      <th>Щит</th>
+      <th>Амулет</th>
+      <th>+Урон</th>
+      <th>+Точн.</th>
+      <th>Физ.каст</th>
+      <th>Маг.каст</th>
+      <th>✖</th>
+    </tr>
+    </thead>
+    <tbody id="char-tbody">
+    </tbody>
+  </table>
+  <button class="btn" onclick="addCharacter()">Добавить персонажа</button>
+  <button class="btn" onclick="calculate()">Рассчитать бой</button>
+</div>
+
+<div id="results" class="results" style="display:none;">
+  <h2>Результаты расчёта</h2>
+  <div class="stats-panel" id="stats-display"></div>
+  <div class="matrix-panel" id="matrix-display"></div>
+  <div class="metrics-panel" id="metrics-display"></div>
+</div>
+
+<div class="docs">
+  <h3>О калькуляторе</h3>
+  <p><strong>Формулы:</strong></p>
+  <ul>
+    <li><strong>ОЗ</strong> = 20 + END ( + индивидуальный бонус).</li>
+    <li><strong>Точность:</strong> для ближнего боя — STR (или PER, если фехтовальное), для дальнего — PER, для магии — MAG. Добавляется бонус точности.</li>
+    <li><strong>База урона:</strong> ближний бой — (STR+END)/4 (округление вниз); дальний — (PER+REF)/4; магия — (MAG+WIL)/4.</li>
+    <li><strong>Модификатор оружия:</strong> берётся из таблицы (ближнее: 4/6/8, дальнее: 3/5/0, магия: 3/5/7). Для механического дальнего оружия используется фиксированный урон (8/12/28) вместо атрибутивной базы.</li>
+    <li><strong>Парное оружие:</strong> если персонаж владеет парным боем (лёгкое оружие или наличие навыка), добавляется вторая атака с половинным уроном (округление вниз).</li>
+    <li><strong>Защита:</strong>
+      <ul>
+        <li>Парирование = END + бонус щита + штраф брони (доступно при ближнем оружии или щите).</li>
+        <li>Уклонение = REF + штраф брони (доступно, если броня не тяжёлая и щит не большой).</li>
+        <li>Блокирование = END + бонус блокирования щита + штраф брони (только для среднего/большого щита).</li>
+      </ul>
+      Итоговая защита: для ближнего боя — максимум парирования и уклонения; для дальнего — максимум уклонения и блокирования (если доступно); для магии — WIL.
+    </li>
+    <li><strong>Вероятность попадания:</strong> точный перебор бросков d20 с учётом критических успехов/провалов (20 — всегда успех, 1 — всегда провал, равенство перебрасывается).</li>
+    <li><strong>Ожидаемый урон по цели:</strong> (урон атакующего - броня цели, минимум 1) × вероятность попадания.</li>
+  </ul>
+  <p><strong>Категория боя</strong> оценивается по коэффициенту R – то есть, по тому, насколько быстрее враги способны убить игроков, чем игроки врагов (по среднему урону за ход).</p>
+  <ul>
+    <li><strong>Легкий бой:</strong> R &lt; 0.67 (игроки быстрее минимум в 1.5 раза).</li>
+    <li><strong>Равный бой:</strong> 0.67 ≤ R &lt; 1.5 (шансы примерно равны).</li>
+    <li><strong>Трудный бой:</strong> 1.5 ≤ R &lt; 2.0 (враги быстрее в 1.5–2 раза).</li>
+    <li><strong>Смертельный бой:</strong> R ≥ 2.0 (враги минимум вдвое быстрее).</li>
+  </ul>
+  <p><em>Примечание: расчёт использует приближённые оценки (сумма максимального и минимального урона по доступным целям) и предназначен для быстрой оценки.</em></p>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
