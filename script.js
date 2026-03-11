@@ -34,28 +34,28 @@ function initExamples() {
     characters = [
         { name: 'Фехтовальщица', side: 1, str:10, end:10, per:5, ref:10, mag:7, wil:5,
             weaponType: 'melee', weaponSize: 'light', fencing: false, dual: false, mechanical: false, dualSkill: false,
-            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '' },
+            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0 },
         { name: 'Стрелок', side: 1, str:7, end:8, per:10, ref:10, mag:4, wil:7,
             weaponType: 'ranged', weaponSize: 'light', fencing: false, dual: false, mechanical: true, dualSkill: false,
-            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '' },
+            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0 },
         { name: 'Маг', side: 1, str:5, end:6, per:4, ref:10, mag:10, wil:9,
             weaponType: 'magic', weaponSize: 'medium', fencing: false, dual: false, mechanical: false, dualSkill: false,
-            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '' },
+            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0 },
         { name: 'Паладин', side: 1, str:9, end:9, per:6, ref:6, mag:8, wil:7,
             weaponType: 'melee', weaponSize: 'heavy', fencing: false, dual: false, mechanical: false, dualSkill: false,
-            attackType: 'normal', armor: 'heavy', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '' },
+            attackType: 'normal', armor: 'heavy', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0 },
         { name: 'Дингус', side: 2, str:13, end:10, per:5, ref:5, mag:5, wil:5,
             weaponType: 'melee', weaponSize: 'heavy', fencing: false, dual: false, mechanical: false, dualSkill: false,
-            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpBonus:8 },
+            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:8 },
         { name: 'Грумпи', side: 2, str:10, end:10, per:5, ref:10, mag:5, wil:5,
             weaponType: 'melee', weaponSize: 'medium', fencing: false, dual: true, mechanical: false, dualSkill: true,
-            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '' },
+            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0 },
         { name: 'Магси', side: 2, str:10, end:10, per:5, ref:5, mag:5, wil:8,
             weaponType: 'melee', weaponSize: 'medium', fencing: false, dual: true, mechanical: false, dualSkill: true,
-            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '' },
+            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0 },
         { name: 'Градж', side: 2, str:5, end:6, per:12, ref:10, mag:5, wil:5,
             weaponType: 'ranged', weaponSize: 'light', fencing: false, dual: false, mechanical: true, dualSkill: false,
-            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '' }
+            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0 }
     ];
     renderTable();
 }
@@ -64,7 +64,7 @@ function renderTable() {
     const tbody = document.getElementById('char-tbody');
     tbody.innerHTML = '';
     characters.forEach((char, idx) => {
-        let attackOptions; // убрана избыточная инициализация
+        let attackOptions;
         if (char.weaponType === 'melee') {
             attackOptions = `
         <option value="normal" ${char.attackType === 'normal' ? 'selected' : ''}>Обычный</option>
@@ -99,6 +99,7 @@ function renderTable() {
       <td><input type="number" value="${char.ref !== undefined ? char.ref : ''}" onchange="updateChar(${idx}, 'ref', this.value)"></td>
       <td><input type="number" value="${char.mag !== undefined ? char.mag : ''}" onchange="updateChar(${idx}, 'mag', this.value)"></td>
       <td><input type="number" value="${char.wil !== undefined ? char.wil : ''}" onchange="updateChar(${idx}, 'wil', this.value)"></td>
+      <td><input type="number" value="${char.hpOverride !== undefined ? char.hpOverride : ''}" onchange="updateChar(${idx}, 'hpOverride', this.value)"></td>
       <td><select onchange="updateChar(${idx}, 'weaponType', this.value); renderTable();">
         <option value="melee" ${char.weaponType === 'melee' ? 'selected' : ''}>Ближнее</option>
         <option value="ranged" ${char.weaponType === 'ranged' ? 'selected' : ''}>Дальнее</option>
@@ -157,7 +158,8 @@ function addCharacter() {
     characters.push({
         name: '', side: 1, str: '', end: '', per: '', ref: '', mag: '', wil: '',
         weaponType: 'melee', weaponSize: 'light', fencing: false, dual: false, mechanical: false, dualSkill: false,
-        attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus: '', accBonus: '', customPhys: '', customMag: ''
+        attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus: '', accBonus: '',
+        customPhys: '', customMag: '', hpOverride: '', hpBonus: 0
     });
     renderTable();
 }
@@ -174,7 +176,13 @@ function computeStats(char) {
     const accBonus = safe(char.accBonus);
     const hpBonus = safe(char.hpBonus);
 
-    const hp = BASE_HP + end + hpBonus;
+    let hp;
+    if (char.hpOverride !== undefined && char.hpOverride !== '') {
+        hp = safe(char.hpOverride);
+    } else {
+        hp = BASE_HP + end + hpBonus;
+    }
+
     let baseAcc = 0;
     if (char.weaponType === 'melee') baseAcc = char.fencing ? per : str;
     else if (char.weaponType === 'ranged') baseAcc = per;
@@ -251,7 +259,7 @@ function computeStats(char) {
     let magArmor = amulet.mag;
     if (char.customMag !== undefined && char.customMag !== '') magArmor = safe(char.customMag);
 
-    let baseFormula; // убрана избыточная инициализация
+    let baseFormula;
     if (char.weaponType === 'melee') baseFormula = `(STR+END)/4 = ${baseDmg}`;
     else if (char.weaponType === 'ranged') baseFormula = `(PER+REF)/4 = ${baseDmg}`;
     else baseFormula = `(MAG+WIL)/4 = ${baseDmg}`;
