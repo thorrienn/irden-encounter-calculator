@@ -34,28 +34,28 @@ function initExamples() {
     characters = [
         { name: 'Фехтовальщица', side: 1, str:10, end:10, per:5, ref:10, mag:7, wil:5,
             weaponType: 'melee', weaponSize: 'light', fencing: false, dual: false, mechanical: false, dualSkill: false,
-            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0 },
+            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0, wilBonus:0 },
         { name: 'Стрелок', side: 1, str:7, end:8, per:10, ref:10, mag:4, wil:7,
             weaponType: 'ranged', weaponSize: 'light', fencing: false, dual: false, mechanical: true, dualSkill: false,
-            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0 },
+            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0, wilBonus:0 },
         { name: 'Маг', side: 1, str:5, end:6, per:4, ref:10, mag:10, wil:9,
             weaponType: 'magic', weaponSize: 'medium', fencing: false, dual: false, mechanical: false, dualSkill: false,
-            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0 },
+            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0, wilBonus:0 },
         { name: 'Паладин', side: 1, str:9, end:9, per:6, ref:6, mag:8, wil:7,
             weaponType: 'melee', weaponSize: 'heavy', fencing: false, dual: false, mechanical: false, dualSkill: false,
-            attackType: 'normal', armor: 'heavy', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0 },
+            attackType: 'normal', armor: 'heavy', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0, wilBonus:0 },
         { name: 'Дингус', side: 2, str:13, end:10, per:5, ref:5, mag:5, wil:5,
             weaponType: 'melee', weaponSize: 'heavy', fencing: false, dual: false, mechanical: false, dualSkill: false,
-            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:8, endBonus:0, refBonus:0 },
+            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:8, endBonus:0, refBonus:0, wilBonus:0 },
         { name: 'Грумпи', side: 2, str:10, end:10, per:5, ref:10, mag:5, wil:5,
             weaponType: 'melee', weaponSize: 'medium', fencing: false, dual: true, mechanical: false, dualSkill: true,
-            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0 },
+            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0, wilBonus:0 },
         { name: 'Магси', side: 2, str:10, end:10, per:5, ref:5, mag:5, wil:8,
             weaponType: 'melee', weaponSize: 'medium', fencing: false, dual: true, mechanical: false, dualSkill: true,
-            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0 },
+            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0, wilBonus:0 },
         { name: 'Градж', side: 2, str:5, end:6, per:12, ref:10, mag:5, wil:5,
             weaponType: 'ranged', weaponSize: 'light', fencing: false, dual: false, mechanical: true, dualSkill: false,
-            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0 }
+            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0, wilBonus:0 }
     ];
     renderTable();
 }
@@ -141,6 +141,7 @@ function renderTable() {
       <td><input type="number" value="${char.customMag !== undefined ? char.customMag : ''}" placeholder="маг" onchange="updateChar(${idx}, 'customMag', this.value)"></td>
       <td><input type="number" value="${char.endBonus !== undefined ? char.endBonus : ''}" onchange="updateChar(${idx}, 'endBonus', this.value)"></td>
       <td><input type="number" value="${char.refBonus !== undefined ? char.refBonus : ''}" onchange="updateChar(${idx}, 'refBonus', this.value)"></td>
+      <td><input type="number" value="${char.wilBonus !== undefined ? char.wilBonus : ''}" onchange="updateChar(${idx}, 'wilBonus', this.value)"></td>
       <td><button class="btn-danger" onclick="removeCharacter(${idx})" style="padding:4px 8px;">✖</button></td>
     `;
         tbody.appendChild(tr);
@@ -161,7 +162,7 @@ function addCharacter() {
         name: '', side: 1, str: '', end: '', per: '', ref: '', mag: '', wil: '',
         weaponType: 'melee', weaponSize: 'light', fencing: false, dual: false, mechanical: false, dualSkill: false,
         attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus: '', accBonus: '',
-        customPhys: '', customMag: '', hpOverride: '', hpBonus: 0, endBonus: '', refBonus: ''
+        customPhys: '', customMag: '', hpOverride: '', hpBonus: 0, endBonus: '', refBonus: '', wilBonus: ''
     });
     renderTable();
 }
@@ -179,6 +180,7 @@ function computeStats(char) {
     const hpBonus = safe(char.hpBonus);
     const endBonus = safe(char.endBonus);
     const refBonus = safe(char.refBonus);
+    const wilBonus = safe(char.wilBonus);
 
     let hp;
     if (char.hpOverride !== undefined && char.hpOverride !== '') {
@@ -260,7 +262,7 @@ function computeStats(char) {
         rangedDef = dodgeAvail ? dodge : -999;
     }
 
-    const magicDef = wil;
+    const magicDef = wil + wilBonus;
     let physArmor = armor.phys;
     if (char.customPhys !== undefined && char.customPhys !== '') physArmor = safe(char.customPhys);
     let magArmor = amulet.mag;
