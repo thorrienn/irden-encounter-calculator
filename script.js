@@ -1,61 +1,350 @@
 const BASE_HP = 20;
 
 const weaponMods = {
-    melee: { light: 4, medium: 6, heavy: 8 },
-    ranged: { light: 3, medium: 5, heavy: 0 },
-    magic: { light: 3, medium: 5, heavy: 7 }
+    melee: {
+        light: 4,
+        medium: 6,
+        heavy: 8
+    },
+    ranged: {
+        light: 3,
+        medium: 5,
+        heavy: 0
+    },
+    magic: {
+        light: 3,
+        medium: 5,
+        heavy: 7
+    }
 };
-const fixedRangedDamage = { light: 8, medium: 12, heavy: 28 };
+const fixedRangedDamage = {
+    light: 8,
+    medium: 12,
+    heavy: 28
+};
 
 const armorData = {
-    none:   { phys: 0, defPenalty: 0, dodgePenalty: 0, dodgePossible: true },
-    light:  { phys: 2, defPenalty: 0, dodgePenalty: -1, dodgePossible: true },
-    medium: { phys: 3, defPenalty: -2, dodgePenalty: 0, dodgePossible: true },
-    heavy:  { phys: 5, defPenalty: -3, dodgePenalty: -999, dodgePossible: false }
+    none: {
+        phys: 0,
+        defPenalty: 0,
+        dodgePenalty: 0,
+        dodgePossible: true
+    },
+    light: {
+        phys: 2,
+        defPenalty: 0,
+        dodgePenalty: -1,
+        dodgePossible: true
+    },
+    medium: {
+        phys: 3,
+        defPenalty: -2,
+        dodgePenalty: 0,
+        dodgePossible: true
+    },
+    heavy: {
+        phys: 5,
+        defPenalty: -3,
+        dodgePenalty: -999,
+        dodgePossible: false
+    }
 };
 
 const shieldData = {
-    none:   { parry: 0, block: 0, blockRanged: false, dodgePossible: true },
-    small:  { parry: 1, block: 0, blockRanged: false, dodgePossible: true },
-    medium: { parry: 2, block: 2, blockRanged: true, dodgePossible: true },
-    large:  { parry: 3, block: 3, blockRanged: true, dodgePossible: false }
+    none: {
+        parry: 0,
+        block: 0,
+        blockRanged: false,
+        dodgePossible: true
+    },
+    small: {
+        parry: 1,
+        block: 0,
+        blockRanged: false,
+        dodgePossible: true
+    },
+    medium: {
+        parry: 2,
+        block: 2,
+        blockRanged: true,
+        dodgePossible: true
+    },
+    large: {
+        parry: 3,
+        block: 3,
+        blockRanged: true,
+        dodgePossible: false
+    }
 };
 
 const amuletData = {
-    none:    { mag: 0, blockPenalty: 0, blockPossible: true },
-    amulet:  { mag: 2, blockPenalty: -1, blockPossible: true },
-    talisman:{ mag: 3, blockPenalty: -2, blockPossible: true },
-    apotrop: { mag: 5, blockPenalty: -3, blockPossible: false }
+    none: {
+        mag: 0,
+        blockPenalty: 0,
+        blockPossible: true
+    },
+    amulet: {
+        mag: 2,
+        blockPenalty: -1,
+        blockPossible: true
+    },
+    talisman: {
+        mag: 3,
+        blockPenalty: -2,
+        blockPossible: true
+    },
+    apotrop: {
+        mag: 5,
+        blockPenalty: -3,
+        blockPossible: false
+    }
 };
 
 let characters = [];
 
+function escapeHtml(unsafe) {
+    return unsafe.replace(/[&<>"]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        if (m === '"') return '&quot;';
+        return m;
+    });
+}
+
 function initExamples() {
-    characters = [
-        { name: 'Фехтовальщица', side: 1, str:10, end:10, per:5, ref:10, mag:7, wil:5,
-            weaponType: 'melee', weaponSize: 'light', fencing: false, dual: false, mechanical: false, dualSkill: false,
-            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0, wilBonus:0 },
-        { name: 'Стрелок', side: 1, str:7, end:8, per:10, ref:10, mag:4, wil:7,
-            weaponType: 'ranged', weaponSize: 'light', fencing: false, dual: false, mechanical: true, dualSkill: false,
-            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0, wilBonus:0 },
-        { name: 'Маг', side: 1, str:5, end:6, per:4, ref:10, mag:10, wil:9,
-            weaponType: 'magic', weaponSize: 'medium', fencing: false, dual: false, mechanical: false, dualSkill: false,
-            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0, wilBonus:0 },
-        { name: 'Паладин', side: 1, str:9, end:9, per:6, ref:6, mag:8, wil:7,
-            weaponType: 'melee', weaponSize: 'heavy', fencing: false, dual: false, mechanical: false, dualSkill: false,
-            attackType: 'normal', armor: 'heavy', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0, wilBonus:0 },
-        { name: 'Дингус', side: 2, str:13, end:10, per:5, ref:5, mag:5, wil:5,
-            weaponType: 'melee', weaponSize: 'heavy', fencing: false, dual: false, mechanical: false, dualSkill: false,
-            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:8, endBonus:0, refBonus:0, wilBonus:0 },
-        { name: 'Грумпи', side: 2, str:10, end:10, per:5, ref:10, mag:5, wil:5,
-            weaponType: 'melee', weaponSize: 'medium', fencing: false, dual: true, mechanical: false, dualSkill: true,
-            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0, wilBonus:0 },
-        { name: 'Магси', side: 2, str:10, end:10, per:5, ref:5, mag:5, wil:8,
-            weaponType: 'melee', weaponSize: 'medium', fencing: false, dual: true, mechanical: false, dualSkill: true,
-            attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0, wilBonus:0 },
-        { name: 'Градж', side: 2, str:5, end:6, per:12, ref:10, mag:5, wil:5,
-            weaponType: 'ranged', weaponSize: 'light', fencing: false, dual: false, mechanical: true, dualSkill: false,
-            attackType: 'normal', armor: 'light', shield: 'none', amulet: 'none', dmgBonus:0, accBonus:0, customPhys: '', customMag: '', hpOverride: '', hpBonus:0, endBonus:0, refBonus:0, wilBonus:0 }
+    characters = [{
+        name: 'Фехтовальщица',
+        side: 1,
+        str: 10,
+        end: 10,
+        per: 5,
+        ref: 10,
+        mag: 7,
+        wil: 5,
+        weaponType: 'melee',
+        weaponSize: 'light',
+        fencing: false,
+        dual: false,
+        mechanical: false,
+        dualSkill: false,
+        attackType: 'normal',
+        armor: 'none',
+        shield: 'none',
+        amulet: 'none',
+        dmgBonus: 0,
+        accBonus: 0,
+        customPhys: '',
+        customMag: '',
+        hpOverride: '',
+        hpBonus: 0,
+        endBonus: 0,
+        refBonus: 0,
+        wilBonus: 0
+    },
+        {
+            name: 'Стрелок',
+            side: 1,
+            str: 7,
+            end: 8,
+            per: 10,
+            ref: 10,
+            mag: 4,
+            wil: 7,
+            weaponType: 'ranged',
+            weaponSize: 'light',
+            fencing: false,
+            dual: false,
+            mechanical: true,
+            dualSkill: false,
+            attackType: 'normal',
+            armor: 'light',
+            shield: 'none',
+            amulet: 'none',
+            dmgBonus: 0,
+            accBonus: 0,
+            customPhys: '',
+            customMag: '',
+            hpOverride: '',
+            hpBonus: 0,
+            endBonus: 0,
+            refBonus: 0,
+            wilBonus: 0
+        },
+        {
+            name: 'Маг',
+            side: 1,
+            str: 5,
+            end: 6,
+            per: 4,
+            ref: 10,
+            mag: 10,
+            wil: 9,
+            weaponType: 'magic',
+            weaponSize: 'medium',
+            fencing: false,
+            dual: false,
+            mechanical: false,
+            dualSkill: false,
+            attackType: 'normal',
+            armor: 'light',
+            shield: 'none',
+            amulet: 'none',
+            dmgBonus: 0,
+            accBonus: 0,
+            customPhys: '',
+            customMag: '',
+            hpOverride: '',
+            hpBonus: 0,
+            endBonus: 0,
+            refBonus: 0,
+            wilBonus: 0
+        },
+        {
+            name: 'Паладин',
+            side: 1,
+            str: 9,
+            end: 9,
+            per: 6,
+            ref: 6,
+            mag: 8,
+            wil: 7,
+            weaponType: 'melee',
+            weaponSize: 'heavy',
+            fencing: false,
+            dual: false,
+            mechanical: false,
+            dualSkill: false,
+            attackType: 'normal',
+            armor: 'heavy',
+            shield: 'none',
+            amulet: 'none',
+            dmgBonus: 0,
+            accBonus: 0,
+            customPhys: '',
+            customMag: '',
+            hpOverride: '',
+            hpBonus: 0,
+            endBonus: 0,
+            refBonus: 0,
+            wilBonus: 0
+        },
+        {
+            name: 'Дингус',
+            side: 2,
+            str: 13,
+            end: 10,
+            per: 5,
+            ref: 5,
+            mag: 5,
+            wil: 5,
+            weaponType: 'melee',
+            weaponSize: 'heavy',
+            fencing: false,
+            dual: false,
+            mechanical: false,
+            dualSkill: false,
+            attackType: 'normal',
+            armor: 'light',
+            shield: 'none',
+            amulet: 'none',
+            dmgBonus: 0,
+            accBonus: 0,
+            customPhys: '',
+            customMag: '',
+            hpOverride: '',
+            hpBonus: 8,
+            endBonus: 0,
+            refBonus: 0,
+            wilBonus: 0
+        },
+        {
+            name: 'Грумпи',
+            side: 2,
+            str: 10,
+            end: 10,
+            per: 5,
+            ref: 10,
+            mag: 5,
+            wil: 5,
+            weaponType: 'melee',
+            weaponSize: 'medium',
+            fencing: false,
+            dual: true,
+            mechanical: false,
+            dualSkill: true,
+            attackType: 'normal',
+            armor: 'none',
+            shield: 'none',
+            amulet: 'none',
+            dmgBonus: 0,
+            accBonus: 0,
+            customPhys: '',
+            customMag: '',
+            hpOverride: '',
+            hpBonus: 0,
+            endBonus: 0,
+            refBonus: 0,
+            wilBonus: 0
+        },
+        {
+            name: 'Магси',
+            side: 2,
+            str: 10,
+            end: 10,
+            per: 5,
+            ref: 5,
+            mag: 5,
+            wil: 8,
+            weaponType: 'melee',
+            weaponSize: 'medium',
+            fencing: false,
+            dual: true,
+            mechanical: false,
+            dualSkill: true,
+            attackType: 'normal',
+            armor: 'none',
+            shield: 'none',
+            amulet: 'none',
+            dmgBonus: 0,
+            accBonus: 0,
+            customPhys: '',
+            customMag: '',
+            hpOverride: '',
+            hpBonus: 0,
+            endBonus: 0,
+            refBonus: 0,
+            wilBonus: 0
+        },
+        {
+            name: 'Градж',
+            side: 2,
+            str: 5,
+            end: 6,
+            per: 12,
+            ref: 10,
+            mag: 5,
+            wil: 5,
+            weaponType: 'ranged',
+            weaponSize: 'light',
+            fencing: false,
+            dual: false,
+            mechanical: true,
+            dualSkill: false,
+            attackType: 'normal',
+            armor: 'light',
+            shield: 'none',
+            amulet: 'none',
+            dmgBonus: 0,
+            accBonus: 0,
+            customPhys: '',
+            customMag: '',
+            hpOverride: '',
+            hpBonus: 0,
+            endBonus: 0,
+            refBonus: 0,
+            wilBonus: 0
+        }
     ];
     renderTable();
 }
@@ -67,20 +356,20 @@ function renderTable() {
         let attackOptions;
         if (char.weaponType === 'melee') {
             attackOptions = `
-        <option value="normal" ${char.attackType === 'normal' ? 'selected' : ''}>Обычный</option>
-        <option value="accurate" ${char.attackType === 'accurate' ? 'selected' : ''}>Точный</option>
-        <option value="powerful" ${char.attackType === 'powerful' ? 'selected' : ''}>Сильный</option>
-        <option value="flurry" ${char.attackType === 'flurry' ? 'selected' : ''}>Шквал</option>
-      `;
+                <option value="normal" ${char.attackType === 'normal' ? 'selected' : ''}>Обычный</option>
+                <option value="accurate" ${char.attackType === 'accurate' ? 'selected' : ''}>Точный</option>
+                <option value="powerful" ${char.attackType === 'powerful' ? 'selected' : ''}>Сильный</option>
+                <option value="flurry" ${char.attackType === 'flurry' ? 'selected' : ''}>Шквал</option>
+            `;
         } else if (char.weaponType === 'ranged') {
             if (char.mechanical) {
                 attackOptions = `<option value="normal" selected>Обычный</option>`;
             } else {
                 attackOptions = `
-          <option value="normal" ${char.attackType === 'normal' ? 'selected' : ''}>Обычный</option>
-          <option value="aimed" ${char.attackType === 'aimed' ? 'selected' : ''}>Прицельный</option>
-          <option value="piercing" ${char.attackType === 'piercing' ? 'selected' : ''}>Пробивной</option>
-        `;
+                    <option value="normal" ${char.attackType === 'normal' ? 'selected' : ''}>Обычный</option>
+                    <option value="aimed" ${char.attackType === 'aimed' ? 'selected' : ''}>Прицельный</option>
+                    <option value="piercing" ${char.attackType === 'piercing' ? 'selected' : ''}>Пробивной</option>
+                `;
             }
         } else {
             attackOptions = `<option value="normal" selected>Обычная</option>`;
@@ -88,62 +377,62 @@ function renderTable() {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-      <td><input type="text" value="${char.name || ''}" onchange="updateChar(${idx}, 'name', this.value)" style="min-width:90px;"></td>
-      <td><select onchange="updateChar(${idx}, 'side', +this.value)">
-        <option value="1" ${char.side === 1 ? 'selected' : ''}>Игрок</option>
-        <option value="2" ${char.side === 2 ? 'selected' : ''}>Враг</option>
-      </select></td>
-      <td><input type="number" value="${char.str !== undefined ? char.str : ''}" onchange="updateChar(${idx}, 'str', this.value)"></td>
-      <td><input type="number" value="${char.end !== undefined ? char.end : ''}" onchange="updateChar(${idx}, 'end', this.value)"></td>
-      <td><input type="number" value="${char.per !== undefined ? char.per : ''}" onchange="updateChar(${idx}, 'per', this.value)"></td>
-      <td><input type="number" value="${char.ref !== undefined ? char.ref : ''}" onchange="updateChar(${idx}, 'ref', this.value)"></td>
-      <td><input type="number" value="${char.mag !== undefined ? char.mag : ''}" onchange="updateChar(${idx}, 'mag', this.value)"></td>
-      <td><input type="number" value="${char.wil !== undefined ? char.wil : ''}" onchange="updateChar(${idx}, 'wil', this.value)"></td>
-      <td><input type="number" value="${char.hpOverride !== undefined ? char.hpOverride : ''}" onchange="updateChar(${idx}, 'hpOverride', this.value)"></td>
-      <td><select onchange="updateChar(${idx}, 'weaponType', this.value); renderTable();">
-        <option value="melee" ${char.weaponType === 'melee' ? 'selected' : ''}>Ближнее</option>
-        <option value="ranged" ${char.weaponType === 'ranged' ? 'selected' : ''}>Дальнее</option>
-        <option value="magic" ${char.weaponType === 'magic' ? 'selected' : ''}>Магия</option>
-      </select></td>
-      <td><select onchange="updateChar(${idx}, 'weaponSize', this.value)">
-        <option value="light" ${char.weaponSize === 'light' ? 'selected' : ''}>Лёгкое</option>
-        <option value="medium" ${char.weaponSize === 'medium' ? 'selected' : ''}>Среднее</option>
-        <option value="heavy" ${char.weaponSize === 'heavy' ? 'selected' : ''}>Тяжёлое</option>
-      </select></td>
-      <td><input type="checkbox" ${char.fencing ? 'checked' : ''} onchange="updateChar(${idx}, 'fencing', this.checked)"></td>
-      <td><input type="checkbox" ${char.dual ? 'checked' : ''} onchange="updateChar(${idx}, 'dual', this.checked)"></td>
-      <td><input type="checkbox" ${char.mechanical ? 'checked' : ''} onchange="updateChar(${idx}, 'mechanical', this.checked); renderTable();"></td>
-      <td><input type="checkbox" ${char.dualSkill ? 'checked' : ''} onchange="updateChar(${idx}, 'dualSkill', this.checked)"></td>
-      <td><select onchange="updateChar(${idx}, 'attackType', this.value)">
-        ${attackOptions}
-      </select></td>
-      <td><select onchange="updateChar(${idx}, 'armor', this.value)">
-        <option value="none" ${char.armor === 'none' ? 'selected' : ''}>Нет</option>
-        <option value="light" ${char.armor === 'light' ? 'selected' : ''}>Лёгкая</option>
-        <option value="medium" ${char.armor === 'medium' ? 'selected' : ''}>Средняя</option>
-        <option value="heavy" ${char.armor === 'heavy' ? 'selected' : ''}>Тяжёлая</option>
-      </select></td>
-      <td><select onchange="updateChar(${idx}, 'shield', this.value)">
-        <option value="none" ${char.shield === 'none' ? 'selected' : ''}>Нет</option>
-        <option value="small" ${char.shield === 'small' ? 'selected' : ''}>Малый</option>
-        <option value="medium" ${char.shield === 'medium' ? 'selected' : ''}>Средний</option>
-        <option value="large" ${char.shield === 'large' ? 'selected' : ''}>Большой</option>
-      </select></td>
-      <td><select onchange="updateChar(${idx}, 'amulet', this.value)">
-        <option value="none" ${char.amulet === 'none' ? 'selected' : ''}>Нет</option>
-        <option value="amulet" ${char.amulet === 'amulet' ? 'selected' : ''}>Амулет</option>
-        <option value="talisman" ${char.amulet === 'talisman' ? 'selected' : ''}>Талисман</option>
-        <option value="apotrop" ${char.amulet === 'apotrop' ? 'selected' : ''}>Апотропей</option>
-      </select></td>
-      <td><input type="number" value="${char.dmgBonus !== undefined ? char.dmgBonus : ''}" onchange="updateChar(${idx}, 'dmgBonus', this.value)"></td>
-      <td><input type="number" value="${char.accBonus !== undefined ? char.accBonus : ''}" onchange="updateChar(${idx}, 'accBonus', this.value)"></td>
-      <td><input type="number" value="${char.customPhys !== undefined ? char.customPhys : ''}" placeholder="физ" onchange="updateChar(${idx}, 'customPhys', this.value)"></td>
-      <td><input type="number" value="${char.customMag !== undefined ? char.customMag : ''}" placeholder="маг" onchange="updateChar(${idx}, 'customMag', this.value)"></td>
-      <td><input type="number" value="${char.endBonus !== undefined ? char.endBonus : ''}" onchange="updateChar(${idx}, 'endBonus', this.value)"></td>
-      <td><input type="number" value="${char.refBonus !== undefined ? char.refBonus : ''}" onchange="updateChar(${idx}, 'refBonus', this.value)"></td>
-      <td><input type="number" value="${char.wilBonus !== undefined ? char.wilBonus : ''}" onchange="updateChar(${idx}, 'wilBonus', this.value)"></td>
-      <td><button class="btn-danger" onclick="removeCharacter(${idx})" style="padding:4px 8px;">✖</button></td>
-    `;
+            <td><input type="text" value="${escapeHtml(char.name || '')}" onchange="updateChar(${idx}, 'name', this.value)" style="min-width:90px;"></td>
+            <td><select onchange="updateChar(${idx}, 'side', +this.value)">
+                <option value="1" ${char.side === 1 ? 'selected' : ''}>Игрок</option>
+                <option value="2" ${char.side === 2 ? 'selected' : ''}>Враг</option>
+            </select></td>
+            <td><input type="number" value="${char.str !== undefined ? char.str : ''}" onchange="updateChar(${idx}, 'str', this.value)"></td>
+            <td><input type="number" value="${char.end !== undefined ? char.end : ''}" onchange="updateChar(${idx}, 'end', this.value)"></td>
+            <td><input type="number" value="${char.per !== undefined ? char.per : ''}" onchange="updateChar(${idx}, 'per', this.value)"></td>
+            <td><input type="number" value="${char.ref !== undefined ? char.ref : ''}" onchange="updateChar(${idx}, 'ref', this.value)"></td>
+            <td><input type="number" value="${char.mag !== undefined ? char.mag : ''}" onchange="updateChar(${idx}, 'mag', this.value)"></td>
+            <td><input type="number" value="${char.wil !== undefined ? char.wil : ''}" onchange="updateChar(${idx}, 'wil', this.value)"></td>
+            <td><input type="number" value="${char.hpOverride !== undefined ? char.hpOverride : ''}" onchange="updateChar(${idx}, 'hpOverride', this.value)"></td>
+            <td><select onchange="updateChar(${idx}, 'weaponType', this.value); renderTable();">
+                <option value="melee" ${char.weaponType === 'melee' ? 'selected' : ''}>Ближнее</option>
+                <option value="ranged" ${char.weaponType === 'ranged' ? 'selected' : ''}>Дальнее</option>
+                <option value="magic" ${char.weaponType === 'magic' ? 'selected' : ''}>Магия</option>
+            </select></td>
+            <td><select onchange="updateChar(${idx}, 'weaponSize', this.value)">
+                <option value="light" ${char.weaponSize === 'light' ? 'selected' : ''}>Лёгкое</option>
+                <option value="medium" ${char.weaponSize === 'medium' ? 'selected' : ''}>Среднее</option>
+                <option value="heavy" ${char.weaponSize === 'heavy' ? 'selected' : ''}>Тяжёлое</option>
+            </select></td>
+            <td><input type="checkbox" ${char.fencing ? 'checked' : ''} onchange="updateChar(${idx}, 'fencing', this.checked)"></td>
+            <td><input type="checkbox" ${char.dual ? 'checked' : ''} onchange="updateChar(${idx}, 'dual', this.checked)"></td>
+            <td><input type="checkbox" ${char.mechanical ? 'checked' : ''} onchange="updateChar(${idx}, 'mechanical', this.checked); renderTable();"></td>
+            <td><input type="checkbox" ${char.dualSkill ? 'checked' : ''} onchange="updateChar(${idx}, 'dualSkill', this.checked)"></td>
+            <td><select onchange="updateChar(${idx}, 'attackType', this.value)">
+                ${attackOptions}
+            </select></td>
+            <td><select onchange="updateChar(${idx}, 'armor', this.value)">
+                <option value="none" ${char.armor === 'none' ? 'selected' : ''}>Нет</option>
+                <option value="light" ${char.armor === 'light' ? 'selected' : ''}>Лёгкая</option>
+                <option value="medium" ${char.armor === 'medium' ? 'selected' : ''}>Средняя</option>
+                <option value="heavy" ${char.armor === 'heavy' ? 'selected' : ''}>Тяжёлая</option>
+            </select></td>
+            <td><select onchange="updateChar(${idx}, 'shield', this.value)">
+                <option value="none" ${char.shield === 'none' ? 'selected' : ''}>Нет</option>
+                <option value="small" ${char.shield === 'small' ? 'selected' : ''}>Малый</option>
+                <option value="medium" ${char.shield === 'medium' ? 'selected' : ''}>Средний</option>
+                <option value="large" ${char.shield === 'large' ? 'selected' : ''}>Большой</option>
+            </select></td>
+            <td><select onchange="updateChar(${idx}, 'amulet', this.value)">
+                <option value="none" ${char.amulet === 'none' ? 'selected' : ''}>Нет</option>
+                <option value="amulet" ${char.amulet === 'amulet' ? 'selected' : ''}>Амулет</option>
+                <option value="talisman" ${char.amulet === 'talisman' ? 'selected' : ''}>Талисман</option>
+                <option value="apotrop" ${char.amulet === 'apotrop' ? 'selected' : ''}>Апотропей</option>
+            </select></td>
+            <td><input type="number" value="${char.dmgBonus !== undefined ? char.dmgBonus : ''}" onchange="updateChar(${idx}, 'dmgBonus', this.value)"></td>
+            <td><input type="number" value="${char.accBonus !== undefined ? char.accBonus : ''}" onchange="updateChar(${idx}, 'accBonus', this.value)"></td>
+            <td><input type="number" value="${char.customPhys !== undefined ? char.customPhys : ''}" placeholder="физ" onchange="updateChar(${idx}, 'customPhys', this.value)"></td>
+            <td><input type="number" value="${char.customMag !== undefined ? char.customMag : ''}" placeholder="маг" onchange="updateChar(${idx}, 'customMag', this.value)"></td>
+            <td><input type="number" value="${char.endBonus !== undefined ? char.endBonus : ''}" onchange="updateChar(${idx}, 'endBonus', this.value)"></td>
+            <td><input type="number" value="${char.refBonus !== undefined ? char.refBonus : ''}" onchange="updateChar(${idx}, 'refBonus', this.value)"></td>
+            <td><input type="number" value="${char.wilBonus !== undefined ? char.wilBonus : ''}" onchange="updateChar(${idx}, 'wilBonus', this.value)"></td>
+            <td><button class="btn-danger" onclick="removeCharacter(${idx})" style="padding:4px 8px;">✖</button></td>
+        `;
         tbody.appendChild(tr);
     });
 }
@@ -159,16 +448,42 @@ function removeCharacter(index) {
 
 function addCharacter() {
     characters.push({
-        name: '', side: 1, str: '', end: '', per: '', ref: '', mag: '', wil: '',
-        weaponType: 'melee', weaponSize: 'light', fencing: false, dual: false, mechanical: false, dualSkill: false,
-        attackType: 'normal', armor: 'none', shield: 'none', amulet: 'none', dmgBonus: '', accBonus: '',
-        customPhys: '', customMag: '', hpOverride: '', hpBonus: 0, endBonus: '', refBonus: '', wilBonus: ''
+        name: '',
+        side: 1,
+        str: '',
+        end: '',
+        per: '',
+        ref: '',
+        mag: '',
+        wil: '',
+        weaponType: 'melee',
+        weaponSize: 'light',
+        fencing: false,
+        dual: false,
+        mechanical: false,
+        dualSkill: false,
+        attackType: 'normal',
+        armor: 'none',
+        shield: 'none',
+        amulet: 'none',
+        dmgBonus: '',
+        accBonus: '',
+        customPhys: '',
+        customMag: '',
+        hpOverride: '',
+        hpBonus: 0,
+        endBonus: '',
+        refBonus: '',
+        wilBonus: ''
     });
     renderTable();
 }
 
 function computeStats(char) {
-    const safe = (val) => { const n = Number(val); return isNaN(n) ? 0 : n; };
+    const safe = (val) => {
+        const n = Number(val);
+        return isNaN(n) ? 0 : n;
+    };
     const str = safe(char.str);
     const end = safe(char.end);
     const per = safe(char.per);
@@ -204,15 +519,34 @@ function computeStats(char) {
         weaponMod = weaponMods[char.weaponType][char.weaponSize] || 0;
     }
 
-    let attackDamageMod = 0, attackAccMod = 0, isFullAction = false;
+    let attackDamageMod = 0,
+        attackAccMod = 0,
+        isFullAction = false;
     if (char.attackType !== 'normal') {
         if (char.weaponType === 'melee') {
-            if (char.attackType === 'accurate') { attackDamageMod = -4; attackAccMod = +4; isFullAction = true; }
-            else if (char.attackType === 'powerful') { attackDamageMod = +4; attackAccMod = -4; isFullAction = true; }
-            else if (char.attackType === 'flurry') { attackDamageMod = +6; attackAccMod = -4; isFullAction = true; }
+            if (char.attackType === 'accurate') {
+                attackDamageMod = -4;
+                attackAccMod = +4;
+                isFullAction = true;
+            } else if (char.attackType === 'powerful') {
+                attackDamageMod = +4;
+                attackAccMod = -4;
+                isFullAction = true;
+            } else if (char.attackType === 'flurry') {
+                attackDamageMod = +6;
+                attackAccMod = -4;
+                isFullAction = true;
+            }
         } else if (char.weaponType === 'ranged' && !char.mechanical) {
-            if (char.attackType === 'aimed') { attackDamageMod = 0; attackAccMod = +4; isFullAction = true; }
-            else if (char.attackType === 'piercing') { attackDamageMod = +4; attackAccMod = 0; isFullAction = true; }
+            if (char.attackType === 'aimed') {
+                attackDamageMod = 0;
+                attackAccMod = +4;
+                isFullAction = true;
+            } else if (char.attackType === 'piercing') {
+                attackDamageMod = +4;
+                attackAccMod = 0;
+                isFullAction = true;
+            }
         }
     }
 
@@ -273,17 +607,41 @@ function computeStats(char) {
     else if (char.weaponType === 'ranged') baseFormula = `(PER+REF)/4 = ${baseDmg}`;
     else baseFormula = `(MAG+WIL)/4 = ${baseDmg}`;
 
-    return { hp, totalAcc, baseFormula, totalDmg, meleeDef, rangedDef, magicDef, physArmor, magArmor, weaponType: char.weaponType };
+    return {
+        hp,
+        totalAcc,
+        baseFormula,
+        totalDmg,
+        meleeDef,
+        rangedDef,
+        magicDef,
+        physArmor,
+        magArmor,
+        weaponType: char.weaponType
+    };
 }
 
 function hitProbability(attMod, defMod) {
-    let win = 0, lose = 0;
+    let win = 0,
+        lose = 0;
     for (let a = 1; a <= 20; a++) {
         for (let d = 1; d <= 20; d++) {
-            if (a === 20 && d !== 20) { win++; continue; }
-            if (a === 1 && d !== 1) { lose++; continue; }
-            if (d === 20 && a !== 20) { lose++; continue; }
-            if (d === 1 && a !== 1) { win++; continue; }
+            if (a === 20 && d !== 20) {
+                win++;
+                continue;
+            }
+            if (a === 1 && d !== 1) {
+                lose++;
+                continue;
+            }
+            if (d === 20 && a !== 20) {
+                lose++;
+                continue;
+            }
+            if (d === 1 && a !== 1) {
+                win++;
+                continue;
+            }
             const attTotal = a + attMod;
             const defTotal = d + defMod;
             if (attTotal > defTotal) win++;
@@ -293,7 +651,173 @@ function hitProbability(attMod, defMod) {
     return win / (win + lose);
 }
 
+function validate() {
+    const errors = [];
+
+    if (characters.length === 0) {
+        errors.push('Нет ни одного персонажа.');
+        return errors;
+    }
+
+    const sides = new Set(characters.map(c => c.side));
+    if (!sides.has(1) || !sides.has(2)) {
+        errors.push('Должна быть хотя бы одна сторона "Игрок" и хотя бы одна сторона "Враг".');
+    }
+
+    characters.forEach((char, idx) => {
+        const prefix = `Персонаж ${idx+1} (${char.name || 'без имени'}): `;
+
+        if (!char.name || char.name.trim() === '') {
+            errors.push(prefix + 'Имя не может быть пустым.');
+        }
+
+        const requiredStats = ['str', 'end', 'per', 'ref', 'mag', 'wil'];
+        requiredStats.forEach(stat => {
+            const val = char[stat];
+            if (val === '' || val === null || val === undefined) {
+                errors.push(prefix + `Поле ${stat.toUpperCase()} обязательно.`);
+            } else {
+                const num = Number(val);
+                if (isNaN(num) || !Number.isInteger(num)) {
+                    errors.push(prefix + `${stat.toUpperCase()} должно быть целым числом.`);
+                } else if (num < 1 || num > 30) {
+                    errors.push(prefix + `${stat.toUpperCase()} должно быть от 1 до 30.`);
+                }
+            }
+        });
+
+        const optionalRanges = [{
+            field: 'dmgBonus',
+            min: -10,
+            max: 10
+        },
+            {
+                field: 'accBonus',
+                min: -10,
+                max: 10
+            },
+            {
+                field: 'customPhys',
+                min: 0,
+                max: 30
+            },
+            {
+                field: 'customMag',
+                min: 0,
+                max: 30
+            },
+            {
+                field: 'hpBonus',
+                min: -10,
+                max: 10
+            },
+            {
+                field: 'endBonus',
+                min: -10,
+                max: 10
+            },
+            {
+                field: 'refBonus',
+                min: -10,
+                max: 10
+            },
+            {
+                field: 'wilBonus',
+                min: -10,
+                max: 10
+            }
+        ];
+
+        optionalRanges.forEach(r => {
+            const val = char[r.field];
+            if (val !== undefined && val !== null && val !== '') {
+                const num = Number(val);
+                if (isNaN(num)) {
+                    errors.push(prefix + `${r.field} должно быть числом.`);
+                } else if (num < r.min || num > r.max) {
+                    errors.push(prefix + `${r.field} должно быть от ${r.min} до ${r.max}.`);
+                }
+            }
+        });
+
+        if (char.hpOverride !== undefined && char.hpOverride !== '') {
+            const hp = Number(char.hpOverride);
+            if (isNaN(hp) || hp < 1) {
+                errors.push(prefix + 'Переопределение ОЗ должно быть положительным числом.');
+            }
+        }
+
+        const validWeaponTypes = ['melee', 'ranged', 'magic'];
+        if (!validWeaponTypes.includes(char.weaponType)) {
+            errors.push(prefix + 'Неверный тип оружия.');
+        }
+
+        const validSizes = ['light', 'medium', 'heavy'];
+        if (!validSizes.includes(char.weaponSize)) {
+            errors.push(prefix + 'Неверный размер оружия.');
+        }
+
+        const validArmor = ['none', 'light', 'medium', 'heavy'];
+        if (!validArmor.includes(char.armor)) {
+            errors.push(prefix + 'Неверный тип брони.');
+        }
+
+        const validShield = ['none', 'small', 'medium', 'large'];
+        if (!validShield.includes(char.shield)) {
+            errors.push(prefix + 'Неверный тип щита.');
+        }
+
+        const validAmulet = ['none', 'amulet', 'talisman', 'apotrop'];
+        if (!validAmulet.includes(char.amulet)) {
+            errors.push(prefix + 'Неверный тип амулета.');
+        }
+
+        if (char.mechanical && char.weaponType !== 'ranged') {
+            errors.push(prefix + 'Механическое оружие может быть только дальним.');
+        }
+
+        if (char.mechanical && char.attackType !== 'normal') {
+            errors.push(prefix + 'Механическое оружие может использовать только обычную атаку.');
+        }
+
+        if (char.dual && char.shield !== 'none') {
+            errors.push(prefix + 'Нельзя использовать два оружия и щит одновременно.');
+        }
+
+        if (char.dual && char.weaponSize !== 'light' && !char.dualSkill) {
+            errors.push(prefix + 'Для использования двух оружий среднего размера требуется навык.');
+        }
+
+        if (char.fencing && char.weaponType !== 'melee') {
+            errors.push(prefix + 'Фехтование возможно только с ближним оружием.');
+        }
+    });
+
+    return errors;
+}
+
 function calculate() {
+    let errorDiv = document.getElementById('errors');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'errors';
+        const results = document.getElementById('results');
+        if (results) {
+            results.parentNode.insertBefore(errorDiv, results);
+        } else {
+            document.body.appendChild(errorDiv);
+        }
+    }
+
+    const validationErrors = validate();
+    if (validationErrors.length > 0) {
+        errorDiv.innerHTML = '<h3>Ошибки валидации:</h3><ul>' + validationErrors.map(e => '<li>' + escapeHtml(e) + '</li>').join('') + '</ul>';
+        document.getElementById('results').style.display = 'none';
+        return;
+    } else {
+        errorDiv.innerHTML = '';
+    }
+
     const stats = characters.map(char => computeStats(char));
     const n = characters.length;
     const matrix = Array.from({ length: n }, () => Array(n).fill(0));
@@ -347,9 +871,7 @@ function calculate() {
     const roundsEnemyAvg = avgEnemyDmg > 0 ? totalHpPlayers / avgEnemyDmg : Infinity;
     const ratio = roundsPlayerAvg / roundsEnemyAvg;
 
-    let category;
-    let categoryClass;
-    let desc;
+    let category, categoryClass, desc;
     if (ratio < 0.67) {
         category = 'Лёгкий бой';
         categoryClass = 'category-easy';
@@ -384,15 +906,15 @@ function calculate() {
     let statsHtml = '<h3>Характеристики персонажей</h3><table><tr><th>Имя</th><th>Стор.</th><th>ОЗ</th><th>Точн.</th><th>База урона</th><th>Урон/ход</th><th>Защ(ближ)</th><th>Защ(даль)</th><th>Защ(маг)</th><th>Физ.бр</th><th>Маг.бр</th></tr>';
     characters.forEach((c, idx) => {
         const s = stats[idx];
-        statsHtml += `<tr><td>${c.name}</td><td>${c.side === 1 ? 'Игрок' : 'Враг'}</td><td>${s.hp}</td><td>${s.totalAcc}</td><td>${s.baseFormula}</td><td>${s.totalDmg.toFixed(2)}</td><td>${s.meleeDef > -999 ? s.meleeDef : 'нет'}</td><td>${s.rangedDef > -999 ? s.rangedDef : 'нет'}</td><td>${s.magicDef}</td><td>${s.physArmor}</td><td>${s.magArmor}</td></tr>`;
+        statsHtml += `<tr><td>${escapeHtml(c.name)}</td><td>${c.side === 1 ? 'Игрок' : 'Враг'}</td><td>${s.hp}</td><td>${s.totalAcc}</td><td>${s.baseFormula}</td><td>${s.totalDmg.toFixed(2)}</td><td>${s.meleeDef > -999 ? s.meleeDef : 'нет'}</td><td>${s.rangedDef > -999 ? s.rangedDef : 'нет'}</td><td>${s.magicDef}</td><td>${s.physArmor}</td><td>${s.magArmor}</td></tr>`;
     });
     statsHtml += '</table>';
 
     let matrixHtml = '<h3>Матрица ожидаемого урона за ход</h3><table><tr><th>Атакующий \\ Цель</th>';
-    characters.forEach(c => matrixHtml += `<th>${c.name}</th>`);
+    characters.forEach(c => matrixHtml += `<th>${escapeHtml(c.name)}</th>`);
     matrixHtml += '</tr>';
     for (let i = 0; i < n; i++) {
-        matrixHtml += `<tr><td>${characters[i].name}</td>`;
+        matrixHtml += `<tr><td>${escapeHtml(characters[i].name)}</td>`;
         for (let j = 0; j < n; j++) {
             matrixHtml += `<td>${matrix[i][j].toFixed(2)}</td>`;
         }
@@ -401,18 +923,18 @@ function calculate() {
     matrixHtml += '</table>';
 
     const metricsHtml = `
-    <h3>Анализ боя (средний сценарий)</h3>
-    <p>Суммарное ОЗ игроков: <strong>${totalHpPlayers}</strong></p>
-    <p>Суммарное ОЗ врагов: <strong>${totalHpEnemies}</strong></p>
-    <p>Средний суммарный урон игроков/ход: <strong>${avgPlayerDmg.toFixed(2)}</strong></p>
-    <p>Средний суммарный урон врагов/ход: <strong>${avgEnemyDmg.toFixed(2)}</strong></p>
-    <p>Время победы игроков: <strong>${roundsPlayerAvg === Infinity ? '∞' : roundsPlayerAvg.toFixed(2)}</strong> раундов</p>
-    <p>Время победы врагов: <strong>${roundsEnemyAvg === Infinity ? '∞' : roundsEnemyAvg.toFixed(2)}</strong> раундов</p>
-    <div class="category ${categoryClass}">Категория: ${category}</div>
-    <p>${desc}</p>
-    <p>Самый уязвимый игрок: <strong>${mostVulnerable.name}</strong> (ОЗ / ожидаемый урон по нему = ${mostVulnerable.ratio.toFixed(2)})</p>
-    <p>Самый опасный враг: <strong>${mostDangerous.name}</strong> (суммарный урон по игрокам за ход = ${mostDangerous.total.toFixed(2)})</p>
-  `;
+        <h3>Анализ боя (средний сценарий)</h3>
+        <p>Суммарное ОЗ игроков: <strong>${totalHpPlayers}</strong></p>
+        <p>Суммарное ОЗ врагов: <strong>${totalHpEnemies}</strong></p>
+        <p>Средний суммарный урон игроков/ход: <strong>${avgPlayerDmg.toFixed(2)}</strong></p>
+        <p>Средний суммарный урон врагов/ход: <strong>${avgEnemyDmg.toFixed(2)}</strong></p>
+        <p>Время победы игроков: <strong>${roundsPlayerAvg === Infinity ? '∞' : roundsPlayerAvg.toFixed(2)}</strong> раундов</p>
+        <p>Время победы врагов: <strong>${roundsEnemyAvg === Infinity ? '∞' : roundsEnemyAvg.toFixed(2)}</strong> раундов</p>
+        <div class="category ${categoryClass}">Категория: ${category}</div>
+        <p>${desc}</p>
+        <p>Самый уязвимый игрок: <strong>${escapeHtml(mostVulnerable.name)}</strong> (ОЗ / ожидаемый урон по нему = ${mostVulnerable.ratio.toFixed(2)})</p>
+        <p>Самый опасный враг: <strong>${escapeHtml(mostDangerous.name)}</strong> (суммарный урон по игрокам за ход = ${mostDangerous.total.toFixed(2)})</p>
+    `;
 
     document.getElementById('stats-display').innerHTML = statsHtml;
     document.getElementById('matrix-display').innerHTML = matrixHtml;

@@ -2,15 +2,18 @@
     box-sizing: border-box;
 }
 body {
-    font-family: 'Roboto', Arial, sans-serif;
+    font-family: "Roboto", Arial, sans-serif;
     margin: 20px;
     background-color: #212121;
     color: #ffffff;
     font-size: 14px;
     line-height: 1.5;
 }
-h1, h2, h3, h4 {
-    color: #54ADF5;
+h1,
+h2,
+h3,
+h4 {
+    color: #54adf5;
     font-weight: 500;
 }
 h1 {
@@ -27,7 +30,8 @@ table {
     background-color: #2a2a2a;
     border: 1px solid #444;
 }
-th, td {
+th,
+td {
     border: 1px solid #444;
     padding: 5px 4px;
     text-align: center;
@@ -45,10 +49,13 @@ td {
     background-color: #2a2a2a;
     color: #ffffff;
 }
-input, select, button {
-    font-family: 'Roboto', Arial, sans-serif;
+input,
+select,
+button {
+    font-family: "Roboto", Arial, sans-serif;
 }
-input, select {
+input,
+select {
     width: 100%;
     box-sizing: border-box;
     font-size: 0.9em;
@@ -59,29 +66,30 @@ input, select {
     border-radius: 4px;
     transition: border 0.2s;
 }
-input:focus, select:focus {
-    border-color: #54ADF5;
+input:focus,
+select:focus {
+    border-color: #54adf5;
     outline: none;
 }
-input[type=checkbox] {
+input[type="checkbox"] {
     width: auto;
     margin: 0 auto;
     display: block;
-    accent-color: #54ADF5;
+    accent-color: #54adf5;
 }
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
-input[type=number] {
+input[type="number"] {
     -moz-appearance: textfield;
     appearance: textfield;
 }
 .btn {
     margin: 5px 5px 5px 0;
     padding: 10px 18px;
-    background: #54ADF5;
+    background: #54adf5;
     color: white;
     border: none;
     cursor: pointer;
@@ -114,7 +122,8 @@ input[type=number] {
     background: #2a2a2a;
     border-radius: 6px;
 }
-.stats-panel, .matrix-panel {
+.stats-panel,
+.matrix-panel {
     overflow-x: auto;
     margin-top: 20px;
 }
@@ -164,62 +173,82 @@ input[type=number] {
     margin-top: 30px;
     border: 1px solid #444;
 }
-.docs ul, .docs p {
+.docs ul,
+.docs p {
     color: #ddd;
 }
 .docs strong {
-    color: #54ADF5;
+    color: #54adf5;
 }
-th:nth-child(3), td:nth-child(3),
-th:nth-child(4), td:nth-child(4),
-th:nth-child(5), td:nth-child(5),
-th:nth-child(6), td:nth-child(6),
-th:nth-child(7), td:nth-child(7),
-th:nth-child(8), td:nth-child(8) {
+th:nth-child(3),
+td:nth-child(3),
+th:nth-child(4),
+td:nth-child(4),
+th:nth-child(5),
+td:nth-child(5),
+th:nth-child(6),
+td:nth-child(6),
+th:nth-child(7),
+td:nth-child(7),
+th:nth-child(8),
+td:nth-child(8) {
     min-width: 45px;
     max-width: 55px;
 }
-th:nth-child(9), td:nth-child(9) {
+th:nth-child(9),
+td:nth-child(9) {
     min-width: 45px;
     max-width: 55px;
 }
-th:nth-child(10), td:nth-child(10),
-th:nth-child(11), td:nth-child(11),
-th:nth-child(16), td:nth-child(16) {
+th:nth-child(10),
+td:nth-child(10),
+th:nth-child(11),
+td:nth-child(11),
+th:nth-child(16),
+td:nth-child(16) {
     min-width: 80px;
 }
-th:nth-child(20), td:nth-child(20),
-th:nth-child(21), td:nth-child(21) {
+th:nth-child(20),
+td:nth-child(20),
+th:nth-child(21),
+td:nth-child(21) {
     min-width: 55px;
     max-width: 70px;
 }
-th:nth-child(22), td:nth-child(22),
-th:nth-child(23), td:nth-child(23) {
+th:nth-child(22),
+td:nth-child(22),
+th:nth-child(23),
+td:nth-child(23) {
     min-width: 45px;
     max-width: 55px;
 }
-th:nth-child(24), td:nth-child(24),
-th:nth-child(25), td:nth-child(25) {
+th:nth-child(24),
+td:nth-child(24),
+th:nth-child(25),
+td:nth-child(25) {
     min-width: 55px;
     max-width: 70px;
 }
-th:nth-child(26), td:nth-child(26) {
+th:nth-child(26),
+td:nth-child(26) {
     min-width: 55px;
     max-width: 70px;
 }
 .stats-panel td:nth-child(3),
 .stats-panel td:nth-child(6) {
-    color: #54ADF5;
+    color: #54adf5;
     font-weight: 700;
 }
 .matrix-panel td:not(:first-child) {
     font-weight: 500;
 }
-th[title] { cursor: default; }
+th[title] {
+    cursor: default;
+}
 .metrics-panel p {
     margin: 8px 0;
     color: #ddd;
 }
 .metrics-panel strong {
-    color: #54ADF5;
+    color: #54adf5;
 }
