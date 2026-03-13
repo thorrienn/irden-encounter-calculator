@@ -601,22 +601,14 @@ class SimActor {
         const s = this.getStats();
         const d = this.base;
         let base = 0;
-
         if (weaponType === 'melee') base = d.fencing ? s.per : s.str;
         else if (weaponType === 'ranged') base = s.per;
         else if (weaponType === 'magic') base = s.mag;
 
         let typeMod = 0;
-
-        if (attackType === 'accurate' || attackType === 'aimed') {
-            typeMod = +4;
-        }
-        if (attackType === 'powerful' || attackType === 'piercing') {
-            typeMod = -4;
-        }
-        if (attackType === 'flurry') {
-            typeMod = -4;
-        }
+        if (attackType === 'accurate' || attackType === 'aimed') typeMod = +4;
+        if (attackType === 'powerful' || attackType === 'piercing') typeMod = -4;
+        if (attackType === 'flurry') typeMod = -4;
 
         if (d.mechanical && weaponType === 'ranged') {
             typeMod = 0;
@@ -661,23 +653,14 @@ class SimActor {
             }
 
             let wMod = (weaponMods[weaponType] && weaponMods[weaponType][weaponSize]) || 0;
-
-            if (attackType === 'powerful' || attackType === 'piercing') {
-                wMod += 4;
-            }
-            if (attackType === 'flurry') {
-                wMod += 6;
-            }
-            if (attackType === 'accurate' || attackType === 'aimed') {
-                wMod -= 4;
-            }
-
+            if (attackType === 'powerful' || attackType === 'piercing') wMod += 4;
+            if (attackType === 'flurry') wMod += 6; // Шквал: +6 к урону
+            if (attackType === 'accurate' || attackType === 'aimed') wMod -= 4;
             baseDmg += wMod;
         }
 
         baseDmg += safe(d.dmgBonus);
         if (isDualSecondHit) baseDmg = Math.floor(baseDmg / 2);
-
         return Math.max(1, baseDmg);
     }
 
@@ -943,6 +926,9 @@ class BattleSimulator {
         let useFullDefense = false;
 
         const isMelee = actor.base.weaponType === 'melee';
+        const isRanged = actor.base.weaponType === 'ranged';
+        const isMagic = actor.base.weaponType === 'magic';
+
         const allEnemiesRanged = enemies.every(e => e.base.weaponType === 'ranged' || e.base.weaponType === 'magic');
         const isEngaged = actor.engagedEnemyId !== null && enemies.some(e => e.id === actor.engagedEnemyId);
         const needsMovement = (isMelee && allEnemiesRanged && !isEngaged);
@@ -981,7 +967,11 @@ class BattleSimulator {
                         useFullDefense = true;
                         this.log(`  [DEFENSE] Низкое HP! Глухая оборона.`);
                     } else {
-                        attackSubType = (actor.base.weaponType === 'melee') ? 'powerful' : 'piercing';
+                        if (isMagic) {
+                            attackSubType = 'normal';
+                        } else {
+                            attackSubType = isMelee ? 'powerful' : 'piercing';
+                        }
                         this.log(`  [ATTACK] Низкое HP, но атакуем насмерть!`);
                     }
                 } else {
@@ -996,28 +986,38 @@ class BattleSimulator {
                         );
                         const accDet = actor.getAccuracyDetails(actor.base.weaponType, 'normal');
 
-                        if (maxDef > accDet.total + 2) {
-                            if (actor.base.weaponType === 'ranged') {
+                        if (!isMagic && isMelee) {
+                            const flurryDmg = actor.getDamage(actor.base.weaponType, actor.base.weaponSize, 'flurry', false);
+                            const armorVal = target.getStats().physArmor;
+                            const actualFlurryDmg = Math.max(1, flurryDmg - armorVal);
+                            const canFinishWithFlurry = (target.currentHp <= actualFlurryDmg);
+
+                            if (canFinishWithFlurry) {
+                                attackSubType = 'flurry';
+                                this.log(`  [TACTICS] Шквал ударов (можем добить! HP врага: ${target.currentHp}, урон шквала: ${actualFlurryDmg})`);
+                            }
+                        } else if (maxDef > accDet.total + 2) {
+                            if (isRanged) {
                                 attackSubType = 'aimed';
                                 this.log(`  [TACTICS] Прицельный выстрел (Защита ${maxDef} > Точность ${accDet.total})`);
-                            } else if (actor.base.weaponType === 'magic') {
-                                attackSubType = 'aimed';
-                                this.log(`  [TACTICS] Быстрое заклинание (Защита ${maxDef} > Точность ${accDet.total})`);
-                            } else {
+                            } else if (isMelee) {
                                 attackSubType = 'accurate';
                                 this.log(`  [TACTICS] Точный удар (Защита ${maxDef} > Точность ${accDet.total})`);
+                            } else {
+                                attackSubType = 'normal';
                             }
                         } else if (target.getStats().physArmor >= 4 || (accDet.total - maxDef >= 5)) {
-                            if (actor.base.weaponType === 'ranged') {
+                            if (isRanged) {
                                 attackSubType = 'piercing';
                                 this.log(`  [TACTICS] Пробивной выстрел (Броня ${target.getStats().physArmor} или запас точности)`);
-                            } else if (actor.base.weaponType === 'magic') {
-                                attackSubType = 'piercing';
-                                this.log(`  [TACTICS] Мощное заклинание (Броня ${target.getStats().physArmor} или запас точности)`);
-                            } else {
+                            } else if (isMelee) {
                                 attackSubType = 'powerful';
                                 this.log(`  [TACTICS] Сильный удар (Броня ${target.getStats().physArmor} или запас точности)`);
+                            } else {
+                                attackSubType = 'normal';
                             }
+                        } else {
+                            attackSubType = 'normal';
                         }
                     }
                 }
@@ -1205,6 +1205,11 @@ class BattleSimulator {
                 let logMsg = `  [DAMAGE] Урон: ${dmg} - ${armorVal} = ${actualDmg}. HP: ${defender.currentHp}`;
                 if (isGuaranteed) logMsg = `  [ГАРАНТ] ` + logMsg;
                 this.log(logMsg);
+
+                if (attackType === 'flurry' && hit && defender.currentHp > 0) {
+                    defender.nextRollBonus += 5;
+                    this.log(`  [EFFECT] Шквал ударов: ${defender.name} получает +5 к следующей атаке!`);
+                }
 
                 if (defender.currentHp <= 0) {
                     defender.isDowned = true;
