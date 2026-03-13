@@ -602,22 +602,27 @@ class SimActor {
         const d = this.base;
         let base = 0;
 
-        const validWeaponType = weaponMods[weaponType] ? weaponType : 'melee';
-
-        if (validWeaponType === 'melee') base = d.fencing ? s.per : s.str;
-        else if (validWeaponType === 'ranged') base = s.per;
-        else if (validWeaponType === 'magic') base = s.mag;
+        if (weaponType === 'melee') base = d.fencing ? s.per : s.str;
+        else if (weaponType === 'ranged') base = s.per;
+        else if (weaponType === 'magic') base = s.mag;
 
         let typeMod = 0;
-        if (attackType === 'accurate' || attackType === 'aimed') typeMod = +4;
-        if (attackType === 'powerful' || attackType === 'piercing') typeMod = -4;
-        if (attackType === 'flurry') typeMod = -4;
 
-        if (d.mechanical && validWeaponType === 'ranged') {
+        if (attackType === 'accurate' || attackType === 'aimed') {
+            typeMod = +4;
+        }
+        if (attackType === 'powerful' || attackType === 'piercing') {
+            typeMod = -4;
+        }
+        if (attackType === 'flurry') {
+            typeMod = -4;
+        }
+
+        if (d.mechanical && weaponType === 'ranged') {
             typeMod = 0;
         }
 
-        const weaponMod = (weaponMods[validWeaponType] && weaponMods[validWeaponType][d.weaponSize]) || 0;
+        const weaponMod = (weaponMods[weaponType] && weaponMods[weaponType][d.weaponSize]) || 0;
         const effects = this.nextRollBonus - this.incomingAttackPenalty - (this.demoralized ? 10 : 0);
         const total = base + typeMod + safe(d.accBonus) + effects;
 
@@ -640,28 +645,33 @@ class SimActor {
         const d = this.base;
         let baseDmg = 0;
 
-        const validWeaponType = weaponMods[weaponType] ? weaponType : 'melee';
-        const validWeaponSize = (weaponMods[validWeaponType] && weaponMods[validWeaponType][weaponSize]) ? weaponSize : 'light';
-
-        if (d.mechanical && validWeaponType === 'ranged') {
-            baseDmg = fixedRangedDamage[validWeaponSize] || 0;
+        if (d.mechanical && weaponType === 'ranged') {
+            baseDmg = fixedRangedDamage[weaponSize] || 0;
         } else {
-            if (validWeaponType === 'melee') {
+            if (weaponType === 'melee') {
                 if (d.fencing) {
                     baseDmg = Math.floor((s.per + s.ref) / 4);
                 } else {
                     baseDmg = Math.floor((s.str + s.end) / 4);
                 }
-            } else if (validWeaponType === 'ranged') {
+            } else if (weaponType === 'ranged') {
                 baseDmg = Math.floor((s.per + s.ref) / 4);
-            } else if (validWeaponType === 'magic') {
+            } else if (weaponType === 'magic') {
                 baseDmg = Math.floor((s.mag + s.wil) / 4);
             }
 
-            let wMod = (weaponMods[validWeaponType] && weaponMods[validWeaponType][validWeaponSize]) || 0;
-            if (attackType === 'powerful' || attackType === 'piercing') wMod += 4;
-            if (attackType === 'flurry') wMod += 6;
-            if (attackType === 'accurate' || attackType === 'aimed') wMod -= 4;
+            let wMod = (weaponMods[weaponType] && weaponMods[weaponType][weaponSize]) || 0;
+
+            if (attackType === 'powerful' || attackType === 'piercing') {
+                wMod += 4;
+            }
+            if (attackType === 'flurry') {
+                wMod += 6;
+            }
+            if (attackType === 'accurate' || attackType === 'aimed') {
+                wMod -= 4;
+            }
+
             baseDmg += wMod;
         }
 
@@ -987,11 +997,27 @@ class BattleSimulator {
                         const accDet = actor.getAccuracyDetails(actor.base.weaponType, 'normal');
 
                         if (maxDef > accDet.total + 2) {
-                            attackSubType = 'accurate';
-                            this.log(`  [TACTICS] Точный удар (Защита ${maxDef} > Точность ${accDet.total})`);
+                            if (actor.base.weaponType === 'ranged') {
+                                attackSubType = 'aimed';
+                                this.log(`  [TACTICS] Прицельный выстрел (Защита ${maxDef} > Точность ${accDet.total})`);
+                            } else if (actor.base.weaponType === 'magic') {
+                                attackSubType = 'aimed';
+                                this.log(`  [TACTICS] Быстрое заклинание (Защита ${maxDef} > Точность ${accDet.total})`);
+                            } else {
+                                attackSubType = 'accurate';
+                                this.log(`  [TACTICS] Точный удар (Защита ${maxDef} > Точность ${accDet.total})`);
+                            }
                         } else if (target.getStats().physArmor >= 4 || (accDet.total - maxDef >= 5)) {
-                            attackSubType = (actor.base.weaponType === 'melee') ? 'powerful' : 'piercing';
-                            this.log(`  [TACTICS] Сильный удар (Броня ${target.getStats().physArmor} или запас точности)`);
+                            if (actor.base.weaponType === 'ranged') {
+                                attackSubType = 'piercing';
+                                this.log(`  [TACTICS] Пробивной выстрел (Броня ${target.getStats().physArmor} или запас точности)`);
+                            } else if (actor.base.weaponType === 'magic') {
+                                attackSubType = 'piercing';
+                                this.log(`  [TACTICS] Мощное заклинание (Броня ${target.getStats().physArmor} или запас точности)`);
+                            } else {
+                                attackSubType = 'powerful';
+                                this.log(`  [TACTICS] Сильный удар (Броня ${target.getStats().physArmor} или запас точности)`);
+                            }
                         }
                     }
                 }
@@ -1067,7 +1093,7 @@ class BattleSimulator {
         const canDualSecond = (isDual && attacker.base.weaponSize === 'light') || (isDual && isDualSkill);
         const movedThisTurn = attacker.hasMoved;
 
-        const isSpecialAttack = (attackType === 'powerful' || attackType === 'accurate' || attackType === 'flurry' || attackType === 'piercing');
+        const isSpecialAttack = (attackType === 'powerful' || attackType === 'accurate' || attackType === 'flurry' || attackType === 'piercing' || attackType === 'aimed');
         const allowDualSecond = canDualSecond && !movedThisTurn && !isSpecialAttack;
 
         let attacks = [{
