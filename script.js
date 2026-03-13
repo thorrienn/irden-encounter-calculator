@@ -1,5 +1,9 @@
-const BASE_HP = 20;
+const safe = (v) => {
+    const n = Number(v);
+    return isNaN(n) ? 0 : n;
+};
 
+const BASE_HP = 20;
 const weaponMods = {
     melee: {
         light: 4,
@@ -22,7 +26,6 @@ const fixedRangedDamage = {
     medium: 12,
     heavy: 28
 };
-
 const armorData = {
     none: {
         phys: 0,
@@ -49,7 +52,6 @@ const armorData = {
         dodgePossible: false
     }
 };
-
 const shieldData = {
     none: {
         parry: 0,
@@ -76,7 +78,6 @@ const shieldData = {
         dodgePossible: false
     }
 };
-
 const amuletData = {
     none: {
         mag: 0,
@@ -102,8 +103,13 @@ const amuletData = {
 
 let characters = [];
 
+let battleLogsHistory = [];
+let currentLogIndex = -1;
+const MAX_HISTORY = 10;
+
 function escapeHtml(unsafe) {
-    return unsafe.replace(/[&<>"]/g, function(m) {
+    if (unsafe === undefined || unsafe === null) return '';
+    return String(unsafe).replace(/[&<>"]/g, function(m) {
         if (m === '&') return '&amp;';
         if (m === '<') return '&lt;';
         if (m === '>') return '&gt;';
@@ -122,13 +128,14 @@ function initExamples() {
         ref: 10,
         mag: 7,
         wil: 5,
+        det: 5,
         weaponType: 'melee',
-        weaponSize: 'light',
+        weaponSize: 'medium',
         fencing: false,
         dual: false,
         mechanical: false,
         dualSkill: false,
-        attackType: 'normal',
+        ignorePenalty: false,
         armor: 'none',
         shield: 'none',
         amulet: 'none',
@@ -140,7 +147,8 @@ function initExamples() {
         hpBonus: 0,
         endBonus: 0,
         refBonus: 0,
-        wilBonus: 0
+        wilBonus: 0,
+        detBonus: 0
     },
         {
             name: 'Стрелок',
@@ -151,13 +159,14 @@ function initExamples() {
             ref: 10,
             mag: 4,
             wil: 7,
+            det: 6,
             weaponType: 'ranged',
-            weaponSize: 'light',
+            weaponSize: 'medium',
             fencing: false,
             dual: false,
             mechanical: true,
             dualSkill: false,
-            attackType: 'normal',
+            ignorePenalty: false,
             armor: 'light',
             shield: 'none',
             amulet: 'none',
@@ -169,7 +178,8 @@ function initExamples() {
             hpBonus: 0,
             endBonus: 0,
             refBonus: 0,
-            wilBonus: 0
+            wilBonus: 0,
+            detBonus: 0
         },
         {
             name: 'Маг',
@@ -180,13 +190,14 @@ function initExamples() {
             ref: 10,
             mag: 10,
             wil: 9,
+            det: 8,
             weaponType: 'magic',
             weaponSize: 'medium',
             fencing: false,
             dual: false,
             mechanical: false,
             dualSkill: false,
-            attackType: 'normal',
+            ignorePenalty: false,
             armor: 'light',
             shield: 'none',
             amulet: 'none',
@@ -198,7 +209,8 @@ function initExamples() {
             hpBonus: 0,
             endBonus: 0,
             refBonus: 0,
-            wilBonus: 0
+            wilBonus: 0,
+            detBonus: 0
         },
         {
             name: 'Паладин',
@@ -209,13 +221,14 @@ function initExamples() {
             ref: 6,
             mag: 8,
             wil: 7,
+            det: 7,
             weaponType: 'melee',
             weaponSize: 'heavy',
             fencing: false,
             dual: false,
             mechanical: false,
             dualSkill: false,
-            attackType: 'normal',
+            ignorePenalty: false,
             armor: 'heavy',
             shield: 'none',
             amulet: 'none',
@@ -227,7 +240,8 @@ function initExamples() {
             hpBonus: 0,
             endBonus: 0,
             refBonus: 0,
-            wilBonus: 0
+            wilBonus: 0,
+            detBonus: 0
         },
         {
             name: 'Дингус',
@@ -238,13 +252,14 @@ function initExamples() {
             ref: 5,
             mag: 5,
             wil: 5,
+            det: 8,
             weaponType: 'melee',
             weaponSize: 'heavy',
             fencing: false,
             dual: false,
             mechanical: false,
             dualSkill: false,
-            attackType: 'normal',
+            ignorePenalty: false,
             armor: 'light',
             shield: 'none',
             amulet: 'none',
@@ -256,7 +271,8 @@ function initExamples() {
             hpBonus: 8,
             endBonus: 0,
             refBonus: 0,
-            wilBonus: 0
+            wilBonus: 0,
+            detBonus: 0
         },
         {
             name: 'Грумпи',
@@ -267,13 +283,14 @@ function initExamples() {
             ref: 10,
             mag: 5,
             wil: 5,
+            det: 10,
             weaponType: 'melee',
             weaponSize: 'medium',
             fencing: false,
             dual: true,
             mechanical: false,
             dualSkill: true,
-            attackType: 'normal',
+            ignorePenalty: false,
             armor: 'none',
             shield: 'none',
             amulet: 'none',
@@ -285,7 +302,8 @@ function initExamples() {
             hpBonus: 0,
             endBonus: 0,
             refBonus: 0,
-            wilBonus: 0
+            wilBonus: 0,
+            detBonus: 0
         },
         {
             name: 'Магси',
@@ -296,13 +314,14 @@ function initExamples() {
             ref: 5,
             mag: 5,
             wil: 8,
+            det: 10,
             weaponType: 'melee',
             weaponSize: 'medium',
             fencing: false,
             dual: true,
             mechanical: false,
             dualSkill: true,
-            attackType: 'normal',
+            ignorePenalty: false,
             armor: 'none',
             shield: 'none',
             amulet: 'none',
@@ -314,7 +333,8 @@ function initExamples() {
             hpBonus: 0,
             endBonus: 0,
             refBonus: 0,
-            wilBonus: 0
+            wilBonus: 0,
+            detBonus: 0
         },
         {
             name: 'Градж',
@@ -325,13 +345,14 @@ function initExamples() {
             ref: 10,
             mag: 5,
             wil: 5,
+            det: 8,
             weaponType: 'ranged',
-            weaponSize: 'light',
+            weaponSize: 'medium',
             fencing: false,
             dual: false,
             mechanical: true,
             dualSkill: false,
-            attackType: 'normal',
+            ignorePenalty: false,
             armor: 'light',
             shield: 'none',
             amulet: 'none',
@@ -343,7 +364,8 @@ function initExamples() {
             hpBonus: 0,
             endBonus: 0,
             refBonus: 0,
-            wilBonus: 0
+            wilBonus: 0,
+            detBonus: 0
         }
     ];
     renderTable();
@@ -351,94 +373,73 @@ function initExamples() {
 
 function renderTable() {
     const tbody = document.getElementById('char-tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
     characters.forEach((char, idx) => {
-        let attackOptions;
-        if (char.weaponType === 'melee') {
-            attackOptions = `
-                <option value="normal" ${char.attackType === 'normal' ? 'selected' : ''}>Обычный</option>
-                <option value="accurate" ${char.attackType === 'accurate' ? 'selected' : ''}>Точный</option>
-                <option value="powerful" ${char.attackType === 'powerful' ? 'selected' : ''}>Сильный</option>
-                <option value="flurry" ${char.attackType === 'flurry' ? 'selected' : ''}>Шквал</option>
-            `;
-        } else if (char.weaponType === 'ranged') {
-            if (char.mechanical) {
-                attackOptions = `<option value="normal" selected>Обычный</option>`;
-            } else {
-                attackOptions = `
-                    <option value="normal" ${char.attackType === 'normal' ? 'selected' : ''}>Обычный</option>
-                    <option value="aimed" ${char.attackType === 'aimed' ? 'selected' : ''}>Прицельный</option>
-                    <option value="piercing" ${char.attackType === 'piercing' ? 'selected' : ''}>Пробивной</option>
-                `;
-            }
-        } else {
-            attackOptions = `<option value="normal" selected>Обычная</option>`;
-        }
-
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="text" value="${escapeHtml(char.name || '')}" onchange="updateChar(${idx}, 'name', this.value)" style="min-width:90px;"></td>
-            <td><select onchange="updateChar(${idx}, 'side', +this.value)">
-                <option value="1" ${char.side === 1 ? 'selected' : ''}>Игрок</option>
-                <option value="2" ${char.side === 2 ? 'selected' : ''}>Враг</option>
-            </select></td>
-            <td><input type="number" value="${char.str !== undefined ? char.str : ''}" onchange="updateChar(${idx}, 'str', this.value)"></td>
-            <td><input type="number" value="${char.end !== undefined ? char.end : ''}" onchange="updateChar(${idx}, 'end', this.value)"></td>
-            <td><input type="number" value="${char.per !== undefined ? char.per : ''}" onchange="updateChar(${idx}, 'per', this.value)"></td>
-            <td><input type="number" value="${char.ref !== undefined ? char.ref : ''}" onchange="updateChar(${idx}, 'ref', this.value)"></td>
-            <td><input type="number" value="${char.mag !== undefined ? char.mag : ''}" onchange="updateChar(${idx}, 'mag', this.value)"></td>
-            <td><input type="number" value="${char.wil !== undefined ? char.wil : ''}" onchange="updateChar(${idx}, 'wil', this.value)"></td>
-            <td><input type="number" value="${char.hpOverride !== undefined ? char.hpOverride : ''}" onchange="updateChar(${idx}, 'hpOverride', this.value)"></td>
-            <td><select onchange="updateChar(${idx}, 'weaponType', this.value); renderTable();">
-                <option value="melee" ${char.weaponType === 'melee' ? 'selected' : ''}>Ближнее</option>
-                <option value="ranged" ${char.weaponType === 'ranged' ? 'selected' : ''}>Дальнее</option>
-                <option value="magic" ${char.weaponType === 'magic' ? 'selected' : ''}>Магия</option>
-            </select></td>
-            <td><select onchange="updateChar(${idx}, 'weaponSize', this.value)">
-                <option value="light" ${char.weaponSize === 'light' ? 'selected' : ''}>Лёгкое</option>
-                <option value="medium" ${char.weaponSize === 'medium' ? 'selected' : ''}>Среднее</option>
-                <option value="heavy" ${char.weaponSize === 'heavy' ? 'selected' : ''}>Тяжёлое</option>
-            </select></td>
-            <td><input type="checkbox" ${char.fencing ? 'checked' : ''} onchange="updateChar(${idx}, 'fencing', this.checked)"></td>
-            <td><input type="checkbox" ${char.dual ? 'checked' : ''} onchange="updateChar(${idx}, 'dual', this.checked)"></td>
-            <td><input type="checkbox" ${char.mechanical ? 'checked' : ''} onchange="updateChar(${idx}, 'mechanical', this.checked); renderTable();"></td>
-            <td><input type="checkbox" ${char.dualSkill ? 'checked' : ''} onchange="updateChar(${idx}, 'dualSkill', this.checked)"></td>
-            <td><select onchange="updateChar(${idx}, 'attackType', this.value)">
-                ${attackOptions}
-            </select></td>
-            <td><select onchange="updateChar(${idx}, 'armor', this.value)">
-                <option value="none" ${char.armor === 'none' ? 'selected' : ''}>Нет</option>
-                <option value="light" ${char.armor === 'light' ? 'selected' : ''}>Лёгкая</option>
-                <option value="medium" ${char.armor === 'medium' ? 'selected' : ''}>Средняя</option>
-                <option value="heavy" ${char.armor === 'heavy' ? 'selected' : ''}>Тяжёлая</option>
-            </select></td>
-            <td><select onchange="updateChar(${idx}, 'shield', this.value)">
-                <option value="none" ${char.shield === 'none' ? 'selected' : ''}>Нет</option>
-                <option value="small" ${char.shield === 'small' ? 'selected' : ''}>Малый</option>
-                <option value="medium" ${char.shield === 'medium' ? 'selected' : ''}>Средний</option>
-                <option value="large" ${char.shield === 'large' ? 'selected' : ''}>Большой</option>
-            </select></td>
-            <td><select onchange="updateChar(${idx}, 'amulet', this.value)">
-                <option value="none" ${char.amulet === 'none' ? 'selected' : ''}>Нет</option>
-                <option value="amulet" ${char.amulet === 'amulet' ? 'selected' : ''}>Амулет</option>
-                <option value="talisman" ${char.amulet === 'talisman' ? 'selected' : ''}>Талисман</option>
-                <option value="apotrop" ${char.amulet === 'apotrop' ? 'selected' : ''}>Апотропей</option>
-            </select></td>
-            <td><input type="number" value="${char.dmgBonus !== undefined ? char.dmgBonus : ''}" onchange="updateChar(${idx}, 'dmgBonus', this.value)"></td>
-            <td><input type="number" value="${char.accBonus !== undefined ? char.accBonus : ''}" onchange="updateChar(${idx}, 'accBonus', this.value)"></td>
-            <td><input type="number" value="${char.customPhys !== undefined ? char.customPhys : ''}" placeholder="физ" onchange="updateChar(${idx}, 'customPhys', this.value)"></td>
-            <td><input type="number" value="${char.customMag !== undefined ? char.customMag : ''}" placeholder="маг" onchange="updateChar(${idx}, 'customMag', this.value)"></td>
-            <td><input type="number" value="${char.endBonus !== undefined ? char.endBonus : ''}" onchange="updateChar(${idx}, 'endBonus', this.value)"></td>
-            <td><input type="number" value="${char.refBonus !== undefined ? char.refBonus : ''}" onchange="updateChar(${idx}, 'refBonus', this.value)"></td>
-            <td><input type="number" value="${char.wilBonus !== undefined ? char.wilBonus : ''}" onchange="updateChar(${idx}, 'wilBonus', this.value)"></td>
-            <td><button class="btn-danger" onclick="removeCharacter(${idx})" style="padding:4px 8px;">✖</button></td>
-        `;
+      <td><input type="text" value="${escapeHtml(char.name)}" onchange="updateChar(${idx}, 'name', this.value)" style="min-width:80px;"></td>
+      <td><select onchange="updateChar(${idx}, 'side', +this.value)">
+        <option value="1" ${char.side === 1 ? 'selected' : ''}>Игрок</option>
+        <option value="2" ${char.side === 2 ? 'selected' : ''}>Враг</option>
+      </select></td>
+      <td><input type="number" value="${char.str ?? ''}" onchange="updateChar(${idx}, 'str', this.value)"></td>
+      <td><input type="number" value="${char.end ?? ''}" onchange="updateChar(${idx}, 'end', this.value)"></td>
+      <td><input type="number" value="${char.per ?? ''}" onchange="updateChar(${idx}, 'per', this.value)"></td>
+      <td><input type="number" value="${char.ref ?? ''}" onchange="updateChar(${idx}, 'ref', this.value)"></td>
+      <td><input type="number" value="${char.mag ?? ''}" onchange="updateChar(${idx}, 'mag', this.value)"></td>
+      <td><input type="number" value="${char.wil ?? ''}" onchange="updateChar(${idx}, 'wil', this.value)"></td>
+      <td><input type="number" value="${char.det ?? ''}" onchange="updateChar(${idx}, 'det', this.value)"></td>
+      <td><input type="number" value="${char.endBonus ?? 0}" onchange="updateChar(${idx}, 'endBonus', this.value)" title="Бонус к END"></td>
+<td><input type="number" value="${char.refBonus ?? 0}" onchange="updateChar(${idx}, 'refBonus', this.value)" title="Бонус к REF"></td>
+<td><input type="number" value="${char.wilBonus ?? 0}" onchange="updateChar(${idx}, 'wilBonus', this.value)" title="Бонус к WIL"></td>
+<td><input type="number" value="${char.detBonus ?? 0}" onchange="updateChar(${idx}, 'detBonus', this.value)" title="Бонус к DET"></td>
+      <td><input type="number" value="${char.hpOverride ?? ''}" placeholder="Авто" onchange="updateChar(${idx}, 'hpOverride', this.value)"></td>
+      <td><select onchange="updateChar(${idx}, 'weaponType', this.value); renderTable();">
+        <option value="melee" ${char.weaponType === 'melee' ? 'selected' : ''}>Ближ</option>
+        <option value="ranged" ${char.weaponType === 'ranged' ? 'selected' : ''}>Дальн</option>
+        <option value="magic" ${char.weaponType === 'magic' ? 'selected' : ''}>Маг</option>
+      </select></td>
+      <td><select onchange="updateChar(${idx}, 'weaponSize', this.value)">
+        <option value="light" ${char.weaponSize === 'light' ? 'selected' : ''}>Лёгк</option>
+        <option value="medium" ${char.weaponSize === 'medium' ? 'selected' : ''}>Сред</option>
+        <option value="heavy" ${char.weaponSize === 'heavy' ? 'selected' : ''}>Тяж</option>
+      </select></td>
+      <td><input type="checkbox" ${char.fencing ? 'checked' : ''} onchange="updateChar(${idx}, 'fencing', this.checked)" title="Фехтовальное: точность PER, урон PER+REF"></td>
+      <td><input type="checkbox" ${char.dual ? 'checked' : ''} onchange="updateChar(${idx}, 'dual', this.checked)"></td>
+      <td><input type="checkbox" ${char.mechanical ? 'checked' : ''} onchange="updateChar(${idx}, 'mechanical', this.checked); renderTable();"></td>
+      <td><input type="checkbox" ${char.dualSkill ? 'checked' : ''} onchange="updateChar(${idx}, 'dualSkill', this.checked)"></td>
+      <td><input type="checkbox" ${char.ignorePenalty ? 'checked' : ''} onchange="updateChar(${idx}, 'ignorePenalty', this.checked)"></td>
+      <td><select onchange="updateChar(${idx}, 'armor', this.value)">
+        <option value="none" ${char.armor === 'none' ? 'selected' : ''}>Нет</option>
+        <option value="light" ${char.armor === 'light' ? 'selected' : ''}>Лёгк</option>
+        <option value="medium" ${char.armor === 'medium' ? 'selected' : ''}>Сред</option>
+        <option value="heavy" ${char.armor === 'heavy' ? 'selected' : ''}>Тяж</option>
+      </select></td>
+      <td><select onchange="updateChar(${idx}, 'shield', this.value)">
+        <option value="none" ${char.shield === 'none' ? 'selected' : ''}>Нет</option>
+        <option value="small" ${char.shield === 'small' ? 'selected' : ''}>Мал</option>
+        <option value="medium" ${char.shield === 'medium' ? 'selected' : ''}>Сред</option>
+        <option value="large" ${char.shield === 'large' ? 'selected' : ''}>Бол</option>
+      </select></td>
+      <td><select onchange="updateChar(${idx}, 'amulet', this.value)">
+        <option value="none" ${char.amulet === 'none' ? 'selected' : ''}>Нет</option>
+        <option value="amulet" ${char.amulet === 'amulet' ? 'selected' : ''}>Амут</option>
+        <option value="talisman" ${char.amulet === 'talisman' ? 'selected' : ''}>Тал</option>
+        <option value="apotrop" ${char.amulet === 'apotrop' ? 'selected' : ''}>Апо</option>
+      </select></td>
+      <td><input type="number" value="${char.dmgBonus ?? 0}" onchange="updateChar(${idx}, 'dmgBonus', this.value)"></td>
+      <td><input type="number" value="${char.accBonus ?? 0}" onchange="updateChar(${idx}, 'accBonus', this.value)"></td>
+      <td><input type="number" value="${char.customPhys ?? ''}" placeholder="физ" onchange="updateChar(${idx}, 'customPhys', this.value)"></td>
+      <td><input type="number" value="${char.customMag ?? ''}" placeholder="маг" onchange="updateChar(${idx}, 'customMag', this.value)"></td>
+      <td><button class="btn-danger" onclick="removeCharacter(${idx})">X</button></td>
+    `;
         tbody.appendChild(tr);
     });
 }
 
 function updateChar(index, field, value) {
-    characters[index][field] = value;
+    if (characters[index]) characters[index][field] = value;
 }
 
 function removeCharacter(index) {
@@ -448,498 +449,830 @@ function removeCharacter(index) {
 
 function addCharacter() {
     characters.push({
-        name: '',
+        name: 'Новый',
         side: 1,
-        str: '',
-        end: '',
-        per: '',
-        ref: '',
-        mag: '',
-        wil: '',
+        str: 10,
+        end: 10,
+        per: 10,
+        ref: 10,
+        mag: 10,
+        wil: 10,
+        det: 10,
         weaponType: 'melee',
         weaponSize: 'light',
         fencing: false,
         dual: false,
         mechanical: false,
         dualSkill: false,
-        attackType: 'normal',
+        ignorePenalty: false,
         armor: 'none',
         shield: 'none',
         amulet: 'none',
-        dmgBonus: '',
-        accBonus: '',
+        dmgBonus: 0,
+        accBonus: 0,
         customPhys: '',
         customMag: '',
         hpOverride: '',
         hpBonus: 0,
-        endBonus: '',
-        refBonus: '',
-        wilBonus: ''
+        endBonus: 0,
+        refBonus: 0,
+        wilBonus: 0,
+        detBonus: 0
     });
     renderTable();
 }
 
-function computeStats(char) {
-    const safe = (val) => {
-        const n = Number(val);
-        return isNaN(n) ? 0 : n;
-    };
-    const str = safe(char.str);
-    const end = safe(char.end);
-    const per = safe(char.per);
-    const ref = safe(char.ref);
-    const mag = safe(char.mag);
-    const wil = safe(char.wil);
-    const dmgBonus = safe(char.dmgBonus);
-    const accBonus = safe(char.accBonus);
-    const hpBonus = safe(char.hpBonus);
-    const endBonus = safe(char.endBonus);
-    const refBonus = safe(char.refBonus);
-    const wilBonus = safe(char.wilBonus);
+function showPrevLog() {
+    if (currentLogIndex > 0) {
+        currentLogIndex--;
+        displayLogByIndex(currentLogIndex);
+        updateLogNavButtons();
+    }
+}
 
-    let hp;
-    if (char.hpOverride !== undefined && char.hpOverride !== '') {
-        hp = safe(char.hpOverride);
-    } else {
-        hp = BASE_HP + end + hpBonus;
+function showNextLog() {
+    if (currentLogIndex < battleLogsHistory.length - 1) {
+        currentLogIndex++;
+        displayLogByIndex(currentLogIndex);
+        updateLogNavButtons();
+    }
+}
+
+function displayLogByIndex(index) {
+    const logEl = document.getElementById('battle-log');
+    if (!logEl) return;
+    const logText = battleLogsHistory[index] || '';
+    logEl.innerHTML = formatLogText(logText);
+    document.getElementById('log-index-display').innerText = `${index+1}/${battleLogsHistory.length}`;
+}
+
+function updateLogNavButtons() {
+    document.getElementById('prev-log-btn').disabled = (currentLogIndex <= 0);
+    document.getElementById('next-log-btn').disabled = (currentLogIndex >= battleLogsHistory.length - 1);
+}
+
+function formatLogText(rawLog) {
+    return rawLog.split('\n').map(l =>
+        l.includes('[НОКАУТ!]') ? `<div class="log-entry log-damage">${l}</div>` :
+            l.includes('[DAMAGE]') ? `<div class="log-entry log-damage">${l}</div>` :
+                l.includes('[ДЕМОРАЛИЗАЦИЯ]') ? `<div class="log-entry log-debuff">${l}</div>` :
+                    l.includes('ПОПАДАНИЕ') ? `<div class="log-entry">${l}</div>` :
+                        l.includes('ПРОМАХ') ? `<div class="log-entry log-miss">${l}</div>` :
+                            l.includes('РАУНД') ? `<div class="log-turn">${l}</div>` :
+                                `<div class="log-entry">${l}</div>`
+    ).join('');
+}
+
+class SimActor {
+    constructor(data, id) {
+        this.id = id;
+        this.name = data.name;
+        this.side = data.side;
+        this.base = {
+            ...data
+        };
+        this.currentHp = this.calculateMaxHp();
+        this.maxHp = this.currentHp;
+        this.isDowned = false;
+        this.hasMoved = false;
+        this.hasAttacked = false;
+        this.needsReload = false;
+
+        this.nextRollBonus = 0;
+        this.incomingAttackPenalty = 0;
+        this.demoralized = false;
+
+        this.defenseStanceBonus = 0;
+        this.usedFullDefenseLastTurn = false;
+
+        this.motivationUsed = false;
+        this.demoralizationUsed = false;
+
+        this.successfulMeleeDefenses = 0;
+
+        this.engagedEnemyId = null;
     }
 
-    let baseAcc = 0;
-    if (char.weaponType === 'melee') baseAcc = char.fencing ? per : str;
-    else if (char.weaponType === 'ranged') baseAcc = per;
-    else if (char.weaponType === 'magic') baseAcc = mag;
-
-    let baseDmg = 0;
-    if (char.weaponType === 'melee') baseDmg = Math.floor((str + end) / 4);
-    else if (char.weaponType === 'ranged') baseDmg = Math.floor((per + ref) / 4);
-    else if (char.weaponType === 'magic') baseDmg = Math.floor((mag + wil) / 4);
-
-    let weaponMod = 0;
-    if (!char.mechanical) {
-        weaponMod = weaponMods[char.weaponType][char.weaponSize] || 0;
+    calculateMaxHp() {
+        const d = this.base;
+        const end = safe(d.end) + safe(d.endBonus);
+        if (d.hpOverride !== undefined && d.hpOverride !== '') return safe(d.hpOverride);
+        return BASE_HP + end + safe(d.hpBonus);
     }
 
-    let attackDamageMod = 0,
-        attackAccMod = 0,
-        isFullAction = false;
-    if (char.attackType !== 'normal') {
-        if (char.weaponType === 'melee') {
-            if (char.attackType === 'accurate') {
-                attackDamageMod = -4;
-                attackAccMod = +4;
-                isFullAction = true;
-            } else if (char.attackType === 'powerful') {
-                attackDamageMod = +4;
-                attackAccMod = -4;
-                isFullAction = true;
-            } else if (char.attackType === 'flurry') {
-                attackDamageMod = +6;
-                attackAccMod = -4;
-                isFullAction = true;
+    getStats() {
+        const d = this.base;
+        const str = safe(d.str);
+        const end = safe(d.end) + safe(d.endBonus);
+        const per = safe(d.per);
+        const ref = safe(d.ref) + safe(d.refBonus);
+        const mag = safe(d.mag);
+        const wil = safe(d.wil) + safe(d.wilBonus);
+        const det = safe(d.det) + safe(d.detBonus);
+
+        const ignorePen = d.ignorePenalty === true;
+        const armor = armorData[d.armor] || armorData.none;
+        const shield = shieldData[d.shield] || shieldData.none;
+        const defPenalty = ignorePen ? 0 : armor.defPenalty;
+        const dodgePenalty = ignorePen ? 0 : armor.dodgePenalty;
+        let physArmor = armor.phys;
+        if (d.customPhys !== undefined && d.customPhys !== '') physArmor = safe(d.customPhys);
+        let magArmor = (amuletData[d.amulet] ? amuletData[d.amulet].mag : 0);
+        if (d.customMag !== undefined && d.customMag !== '') magArmor = safe(d.customMag);
+        return {
+            str,
+            end,
+            per,
+            ref,
+            mag,
+            wil,
+            det,
+            armor,
+            shield,
+            defPenalty,
+            dodgePenalty,
+            ignorePen,
+            physArmor,
+            magArmor
+        };
+    }
+
+    getAccuracyDetails(weaponType, attackType) {
+        const s = this.getStats();
+        const d = this.base;
+        let base = 0;
+
+        const validWeaponType = weaponMods[weaponType] ? weaponType : 'melee';
+
+        if (validWeaponType === 'melee') base = d.fencing ? s.per : s.str;
+        else if (validWeaponType === 'ranged') base = s.per;
+        else if (validWeaponType === 'magic') base = s.mag;
+
+        let typeMod = 0;
+        if (attackType === 'accurate' || attackType === 'aimed') typeMod = +4;
+        if (attackType === 'powerful' || attackType === 'piercing') typeMod = -4;
+        if (attackType === 'flurry') typeMod = -4;
+
+        if (d.mechanical && validWeaponType === 'ranged') {
+            typeMod = 0;
+        }
+
+        const weaponMod = (weaponMods[validWeaponType] && weaponMods[validWeaponType][d.weaponSize]) || 0;
+        const effects = this.nextRollBonus - this.incomingAttackPenalty - (this.demoralized ? 10 : 0);
+        const total = base + typeMod + safe(d.accBonus) + effects;
+
+        return {
+            total,
+            base,
+            typeMod,
+            accBonus: safe(d.accBonus),
+            effects,
+            details: {
+                rollBonus: this.nextRollBonus,
+                penalty: this.incomingAttackPenalty,
+                demoralized: this.demoralized ? 10 : 0
             }
-        } else if (char.weaponType === 'ranged' && !char.mechanical) {
-            if (char.attackType === 'aimed') {
-                attackDamageMod = 0;
-                attackAccMod = +4;
-                isFullAction = true;
-            } else if (char.attackType === 'piercing') {
-                attackDamageMod = +4;
-                attackAccMod = 0;
-                isFullAction = true;
+        };
+    }
+
+    getDamage(weaponType, weaponSize, attackType, isDualSecondHit) {
+        const s = this.getStats();
+        const d = this.base;
+        let baseDmg = 0;
+
+        const validWeaponType = weaponMods[weaponType] ? weaponType : 'melee';
+        const validWeaponSize = (weaponMods[validWeaponType] && weaponMods[validWeaponType][weaponSize]) ? weaponSize : 'light';
+
+        if (d.mechanical && validWeaponType === 'ranged') {
+            baseDmg = fixedRangedDamage[validWeaponSize] || 0;
+        } else {
+            if (validWeaponType === 'melee') {
+                if (d.fencing) {
+                    baseDmg = Math.floor((s.per + s.ref) / 4);
+                } else {
+                    baseDmg = Math.floor((s.str + s.end) / 4);
+                }
+            } else if (validWeaponType === 'ranged') {
+                baseDmg = Math.floor((s.per + s.ref) / 4);
+            } else if (validWeaponType === 'magic') {
+                baseDmg = Math.floor((s.mag + s.wil) / 4);
             }
+
+            let wMod = (weaponMods[validWeaponType] && weaponMods[validWeaponType][validWeaponSize]) || 0;
+            if (attackType === 'powerful' || attackType === 'piercing') wMod += 4;
+            if (attackType === 'flurry') wMod += 6;
+            if (attackType === 'accurate' || attackType === 'aimed') wMod -= 4;
+            baseDmg += wMod;
+        }
+
+        baseDmg += safe(d.dmgBonus);
+        if (isDualSecondHit) baseDmg = Math.floor(baseDmg / 2);
+
+        return Math.max(1, baseDmg);
+    }
+
+    getDefenseDetails(type, enemyWeaponType) {
+        const s = this.getStats();
+        let baseStat = 0;
+        let shieldMod = 0;
+        let penalty = 0;
+        let possible = false;
+
+        if (type === 'parry') {
+            if (enemyWeaponType === 'magic') return null;
+            if (this.base.weaponType === 'melee' || this.base.shield !== 'none') {
+                baseStat = s.end;
+                shieldMod = s.shield.parry;
+                penalty = s.defPenalty;
+                possible = true;
+            }
+        } else if (type === 'dodge') {
+            if (s.armor.dodgePossible && s.shield.dodgePossible) {
+                baseStat = s.ref;
+                penalty = s.dodgePenalty;
+                possible = true;
+            }
+        } else if (type === 'block') {
+            if (enemyWeaponType === 'melee') return null;
+            if (s.shield.blockRanged) {
+                baseStat = s.end;
+                shieldMod = s.shield.block;
+                penalty = s.defPenalty;
+                possible = true;
+            }
+        } else if (type === 'will') {
+            baseStat = s.wil;
+            possible = true;
+        } else if (type === 'det') {
+            baseStat = s.det;
+            possible = true;
+        }
+
+        if (!possible) return null;
+
+        const effects = this.nextRollBonus + this.defenseStanceBonus - (this.demoralized ? 10 : 0);
+        const total = baseStat + shieldMod + penalty + effects;
+
+        return {
+            total,
+            baseStat,
+            shieldMod,
+            penalty,
+            effects,
+            details: {
+                rollBonus: this.nextRollBonus,
+                stanceBonus: this.defenseStanceBonus,
+                demoralized: this.demoralized ? 10 : 0
+            }
+        };
+    }
+
+    consumeBonuses() {
+        if (this.nextRollBonus !== 0) {
+            this.nextRollBonus = 0;
+        }
+        if (this.incomingAttackPenalty !== 0) {
+            this.incomingAttackPenalty = 0;
+        }
+        if (this.demoralized) {
+            this.demoralized = false;
         }
     }
 
-    let totalAcc = baseAcc + accBonus + attackAccMod;
-    let mainDmg = baseDmg + weaponMod + dmgBonus + attackDamageMod;
-    if (char.mechanical && char.weaponType === 'ranged') {
-        mainDmg = (fixedRangedDamage[char.weaponSize] || 0) + dmgBonus + attackDamageMod;
+    resetRoundState() {
+        this.successfulMeleeDefenses = 0;
     }
+}
 
-    let totalDmg = mainDmg;
-    if (char.dual && !isFullAction && !char.mechanical && (char.weaponSize === 'light' || char.dualSkill)) {
-        totalDmg += Math.floor(mainDmg / 2);
+function rollDice() {
+    return Math.floor(Math.random() * 20) + 1;
+}
+
+function resolveContest(attDetails, defDetails) {
+    const attTotal = attDetails.total;
+    const defTotal = defDetails.total;
+    let rolls = 0;
+    const maxRolls = 10;
+
+    while (rolls < maxRolls) {
+        const rollA = rollDice();
+        const rollD = rollDice();
+        rolls++;
+
+        const critA = (rollA === 20);
+        const critF = (rollA === 1);
+        const critDA = (rollD === 20);
+        const critDF = (rollD === 1);
+
+        const finalAtt = rollA + attTotal;
+        const finalDef = rollD + defTotal;
+
+        if (critA && !critDA) return {
+            winner: 'attack',
+            rollA,
+            rollD,
+            finalAtt,
+            finalDef,
+            isCrit: true
+        };
+        if (critF && !critDF) return {
+            winner: 'defense',
+            rollA,
+            rollD,
+            finalAtt,
+            finalDef,
+            isCritFail: true
+        };
+        if (critDA && !critA) return {
+            winner: 'defense',
+            rollA,
+            rollD,
+            finalAtt,
+            finalDef,
+            isCrit: true
+        };
+        if (critDF && !critF) return {
+            winner: 'attack',
+            rollA,
+            rollD,
+            finalAtt,
+            finalDef,
+            isCritFail: true
+        };
+
+        if ((critA && critDA) || (critF && critDF)) {
+            if (attTotal > defTotal) return {
+                winner: 'attack',
+                rollA,
+                rollD,
+                finalAtt,
+                finalDef,
+                tieBreak: true
+            };
+            if (defTotal > attTotal) return {
+                winner: 'defense',
+                rollA,
+                rollD,
+                finalAtt,
+                finalDef,
+                tieBreak: true
+            };
+            continue;
+        }
+
+        if (finalAtt > finalDef) return {
+            winner: 'attack',
+            rollA,
+            rollD,
+            finalAtt,
+            finalDef
+        };
+        if (finalDef > finalAtt) return {
+            winner: 'defense',
+            rollA,
+            rollD,
+            finalAtt,
+            finalDef
+        };
+        continue;
     }
-
-    const armor = armorData[char.armor] || armorData.none;
-    const shield = shieldData[char.shield] || shieldData.none;
-    const amulet = amuletData[char.amulet] || amuletData.none;
-
-    const endTotal = end + endBonus;
-    const refTotal = ref + refBonus;
-
-    let parry = -999;
-    if (char.weaponType === 'melee' || char.shield !== 'none') {
-        parry = endTotal + shield.parry + armor.defPenalty;
-    }
-    let dodge = -999;
-    if (armor.dodgePossible && shield.dodgePossible) {
-        dodge = refTotal + armor.dodgePenalty;
-    }
-    let block = -999;
-    if (shield.blockRanged) {
-        block = endTotal + shield.block + armor.defPenalty;
-    }
-
-    let meleeDef;
-    const parryAvail = parry > -999;
-    const dodgeAvail = dodge > -999;
-    if (parryAvail && dodgeAvail) meleeDef = Math.max(parry, dodge);
-    else if (parryAvail) meleeDef = parry;
-    else if (dodgeAvail) meleeDef = dodge;
-    else meleeDef = -999;
-
-    let rangedDef;
-    if (shield.blockRanged) {
-        rangedDef = dodgeAvail ? Math.max(dodge, block) : block;
-    } else {
-        rangedDef = dodgeAvail ? dodge : -999;
-    }
-
-    const magicDef = wil + wilBonus;
-    let physArmor = armor.phys;
-    if (char.customPhys !== undefined && char.customPhys !== '') physArmor = safe(char.customPhys);
-    let magArmor = amulet.mag;
-    if (char.customMag !== undefined && char.customMag !== '') magArmor = safe(char.customMag);
-
-    let baseFormula;
-    if (char.weaponType === 'melee') baseFormula = `(STR+END)/4 = ${baseDmg}`;
-    else if (char.weaponType === 'ranged') baseFormula = `(PER+REF)/4 = ${baseDmg}`;
-    else baseFormula = `(MAG+WIL)/4 = ${baseDmg}`;
 
     return {
-        hp,
-        totalAcc,
-        baseFormula,
-        totalDmg,
-        meleeDef,
-        rangedDef,
-        magicDef,
-        physArmor,
-        magArmor,
-        weaponType: char.weaponType
+        winner: 'defense',
+        rollA: 0,
+        rollD: 0,
+        finalAtt: 0,
+        finalDef: 0,
+        timeout: true
     };
 }
 
-function hitProbability(attMod, defMod) {
-    let win = 0,
-        lose = 0;
-    for (let a = 1; a <= 20; a++) {
-        for (let d = 1; d <= 20; d++) {
-            if (a === 20 && d !== 20) {
-                win++;
-                continue;
+class BattleSimulator {
+    constructor(charsData, aiLevel, logCallback) {
+        this.actors = charsData.map((d, i) => new SimActor(d, i));
+        this.aiLevel = aiLevel;
+        this.log = logCallback || (() => {});
+        this.turnOrder = [];
+        this.round = 0;
+    }
+
+    init() {
+        this.actors.forEach(a => {
+            a.initRoll = rollDice();
+        });
+        this.turnOrder = [...this.actors].sort((a, b) => b.initRoll - a.initRoll);
+        this.round = 0;
+        this.log(`--- БОЙ НАЧАЛСЯ ---`);
+        this.log(`Инициатива: ${this.turnOrder.map(a => `${a.name}(${a.initRoll})`).join(' -> ')}`);
+    }
+
+    isBattleOver() {
+        const p = this.actors.filter(a => a.side === 1 && !a.isDowned).length;
+        const e = this.actors.filter(a => a.side === 2 && !a.isDowned).length;
+        if (p === 0) return 'enemies_win';
+        if (e === 0) return 'players_win';
+        return null;
+    }
+
+    run() {
+        this.init();
+        let result = null;
+        const maxRounds = 50;
+
+        while (!result && this.round < maxRounds) {
+            this.round++;
+            result = this.isBattleOver();
+            if (result) break;
+
+            this.log(`\n=== РАУНД ${this.round} ===`);
+
+            this.actors.forEach(a => {
+                a.resetRoundState();
+                a.hasMoved = false;
+                a.hasAttacked = false;
+            });
+
+            for (let actor of this.turnOrder) {
+                if (actor.isDowned) continue;
+                result = this.isBattleOver();
+                if (result) break;
+                this.takeTurn(actor);
             }
-            if (a === 1 && d !== 1) {
-                lose++;
-                continue;
-            }
-            if (d === 20 && a !== 20) {
-                lose++;
-                continue;
-            }
-            if (d === 1 && a !== 1) {
-                win++;
-                continue;
-            }
-            const attTotal = a + attMod;
-            const defTotal = d + defMod;
-            if (attTotal > defTotal) win++;
-            else if (attTotal < defTotal) lose++;
         }
-    }
-    return win / (win + lose);
-}
 
-function validate() {
-    const errors = [];
-
-    if (characters.length === 0) {
-        errors.push('Нет ни одного персонажа.');
-        return errors;
+        return result || 'draw';
     }
 
-    const sides = new Set(characters.map(c => c.side));
-    if (!sides.has(1) || !sides.has(2)) {
-        errors.push('Должна быть хотя бы одна сторона "Игрок" и хотя бы одна сторона "Враг".');
-    }
+    takeTurn(actor) {
+        const enemies = this.actors.filter(a => a.side !== actor.side && !a.isDowned);
+        const allies = this.actors.filter(a => a.side === actor.side && !a.isDowned);
 
-    characters.forEach((char, idx) => {
-        const prefix = `Персонаж ${idx+1} (${char.name || 'без имени'}): `;
+        if (enemies.length === 0) return;
 
-        if (!char.name || char.name.trim() === '') {
-            errors.push(prefix + 'Имя не может быть пустым.');
+        this.log(`\nХод: ${actor.name} (HP: ${actor.currentHp}/${actor.maxHp})`);
+
+        if (actor.defenseStanceBonus > 0) {
+            this.log(`  [INFO] Эффект Глухой обороны у ${actor.name} истек.`);
+            actor.defenseStanceBonus = 0;
+        }
+        actor.usedFullDefenseLastTurn = false;
+
+        if (actor.base.mechanical && actor.needsReload) {
+            this.log(`  [INFO] ${actor.name} перезаряжает оружие.`);
+            actor.needsReload = false;
+            actor.hasAttacked = true;
+            actor.consumeBonuses();
+            return;
         }
 
-        const requiredStats = ['str', 'end', 'per', 'ref', 'mag', 'wil'];
-        requiredStats.forEach(stat => {
-            const val = char[stat];
-            if (val === '' || val === null || val === undefined) {
-                errors.push(prefix + `Поле ${stat.toUpperCase()} обязательно.`);
+        let target = null;
+        let actionType = 'attack';
+        let attackSubType = 'normal';
+        let useMotivation = false;
+        let useDemoralize = false;
+        let useFullDefense = false;
+
+        const isMelee = actor.base.weaponType === 'melee';
+        const allEnemiesRanged = enemies.every(e => e.base.weaponType === 'ranged' || e.base.weaponType === 'magic');
+        const isEngaged = actor.engagedEnemyId !== null && enemies.some(e => e.id === actor.engagedEnemyId);
+        const needsMovement = (isMelee && allEnemiesRanged && !isEngaged);
+
+        const hpPercent = actor.currentHp / actor.maxHp;
+        const isLowHp = hpPercent < 0.3;
+        const easyKill = enemies.find(e => e.currentHp <= 10);
+
+        if (this.aiLevel === 'coordinated' && !actor.motivationUsed && allies.length > 1 && !easyKill) {
+            const bestAlly = allies.filter(a => a !== actor).sort((a, b) => (b.getStats().str + b.getStats().mag) - (a.getStats().str + a.getStats().mag))[0];
+            if (bestAlly) {
+                target = bestAlly;
+                useMotivation = true;
+                this.log(`  [BUFF] Мотивация на ${target.name}`);
+            }
+        }
+
+        if (!useMotivation && this.aiLevel !== 'basic' && !actor.demoralizationUsed && !easyKill && this.round > 1) {
+            const dangerousEnemy = enemies.sort((a, b) => (b.getStats().str + b.getStats().mag) - (a.getStats().str + a.getStats().mag))[0];
+            if (dangerousEnemy) {
+                target = dangerousEnemy;
+                useDemoralize = true;
+                this.log(`  [DEBUFF] Деморализация ${target.name}`);
+            }
+        }
+
+        if (!useMotivation && !useDemoralize) {
+            target = easyKill || enemies.sort((a, b) => a.currentHp - b.currentHp)[0];
+
+            if (needsMovement) {
+                actionType = 'move_attack';
+                this.log(`  [MOVE] ${actor.name} бежит к ${target.name} для сближения.`);
             } else {
-                const num = Number(val);
-                if (isNaN(num) || !Number.isInteger(num)) {
-                    errors.push(prefix + `${stat.toUpperCase()} должно быть целым числом.`);
-                } else if (num < 1 || num > 30) {
-                    errors.push(prefix + `${stat.toUpperCase()} должно быть от 1 до 30.`);
+                if (isLowHp && !easyKill && this.aiLevel !== 'basic') {
+                    if (!actor.usedFullDefenseLastTurn && Math.random() > 0.5) {
+                        useFullDefense = true;
+                        this.log(`  [DEFENSE] Низкое HP! Глухая оборона.`);
+                    } else {
+                        attackSubType = (actor.base.weaponType === 'melee') ? 'powerful' : 'piercing';
+                        this.log(`  [ATTACK] Низкое HP, но атакуем насмерть!`);
+                    }
+                } else {
+                    if (this.aiLevel !== 'basic') {
+                        const defDet = target.getDefenseDetails('parry', actor.base.weaponType);
+                        const dodgeDet = target.getDefenseDetails('dodge', actor.base.weaponType);
+                        const blockDet = target.getDefenseDetails('block', actor.base.weaponType);
+                        const maxDef = Math.max(
+                            defDet ? defDet.total : -999,
+                            dodgeDet ? dodgeDet.total : -999,
+                            blockDet ? blockDet.total : -999
+                        );
+                        const accDet = actor.getAccuracyDetails(actor.base.weaponType, 'normal');
+
+                        if (maxDef > accDet.total + 2) {
+                            attackSubType = 'accurate';
+                            this.log(`  [TACTICS] Точный удар (Защита ${maxDef} > Точность ${accDet.total})`);
+                        } else if (target.getStats().physArmor >= 4 || (accDet.total - maxDef >= 5)) {
+                            attackSubType = (actor.base.weaponType === 'melee') ? 'powerful' : 'piercing';
+                            this.log(`  [TACTICS] Сильный удар (Броня ${target.getStats().physArmor} или запас точности)`);
+                        }
+                    }
                 }
             }
-        });
+        }
 
-        const optionalRanges = [{
-            field: 'dmgBonus',
-            min: -10,
-            max: 10
-        },
-            {
-                field: 'accBonus',
-                min: -10,
-                max: 10
-            },
-            {
-                field: 'customPhys',
-                min: 0,
-                max: 30
-            },
-            {
-                field: 'customMag',
-                min: 0,
-                max: 30
-            },
-            {
-                field: 'hpBonus',
-                min: -10,
-                max: 10
-            },
-            {
-                field: 'endBonus',
-                min: -10,
-                max: 10
-            },
-            {
-                field: 'refBonus',
-                min: -10,
-                max: 10
-            },
-            {
-                field: 'wilBonus',
-                min: -10,
-                max: 10
+        if (useMotivation) {
+            actor.motivationUsed = true;
+            target.nextRollBonus += 10;
+            this.log(`  [EFFECT] ${target.name} получает +10.`);
+            actor.hasAttacked = true;
+            actor.consumeBonuses();
+        } else if (useDemoralize) {
+            actor.demoralizationUsed = true;
+
+            const attDet = actor.getAccuracyDetails('magic', 'normal');
+            const defDet = target.getDefenseDetails('det', actor.base.weaponType);
+
+            const attStats = actor.getStats();
+            const defStats = target.getStats();
+
+            const attBase = attStats.det || 5;
+
+            const defBase = defStats.det || 5;
+
+            const attEffects = actor.nextRollBonus - actor.incomingAttackPenalty - (actor.demoralized ? 10 : 0);
+            const defEffects = target.nextRollBonus + target.defenseStanceBonus - (target.demoralized ? 10 : 0);
+
+            const attTotal = attBase + attEffects;
+            const defTotal = defBase + defEffects;
+
+            const rollA = rollDice();
+            const rollD = rollDice();
+            const finalAtt = rollA + attTotal;
+            const finalDef = rollD + defTotal;
+
+            this.log(`  [ДЕМОРАЛИЗАЦИЯ] ${actor.name} vs ${target.name}:`);
+            this.log(`    Атакующий: Кубик [${rollA}] + ${attBase} (DET) ${attEffects !== 0 ? (attEffects >= 0 ? '+' : '') + attEffects + ' (Эфф)' : ''} = ${finalAtt}`);
+            this.log(`    Защита: Кубик [${rollD}] + ${defBase} (DET) ${defEffects !== 0 ? (defEffects >= 0 ? '+' : '') + defEffects + ' (Эфф)' : ''} = ${finalDef}`);
+
+            if (finalAtt > finalDef) {
+                target.demoralized = true;
+                this.log(`  [EFFECT] ${target.name} ДЕМОРАЛИЗОВАН (-10 к следующему броску).`);
+            } else {
+                this.log(`  [RESIST] ${target.name} сопротивился.`);
             }
-        ];
 
-        optionalRanges.forEach(r => {
-            const val = char[r.field];
-            if (val !== undefined && val !== null && val !== '') {
-                const num = Number(val);
-                if (isNaN(num)) {
-                    errors.push(prefix + `${r.field} должно быть числом.`);
-                } else if (num < r.min || num > r.max) {
-                    errors.push(prefix + `${r.field} должно быть от ${r.min} до ${r.max}.`);
-                }
-            }
-        });
-
-        if (char.hpOverride !== undefined && char.hpOverride !== '') {
-            const hp = Number(char.hpOverride);
-            if (isNaN(hp) || hp < 1) {
-                errors.push(prefix + 'Переопределение ОЗ должно быть положительным числом.');
-            }
-        }
-
-        const validWeaponTypes = ['melee', 'ranged', 'magic'];
-        if (!validWeaponTypes.includes(char.weaponType)) {
-            errors.push(prefix + 'Неверный тип оружия.');
-        }
-
-        const validSizes = ['light', 'medium', 'heavy'];
-        if (!validSizes.includes(char.weaponSize)) {
-            errors.push(prefix + 'Неверный размер оружия.');
-        }
-
-        const validArmor = ['none', 'light', 'medium', 'heavy'];
-        if (!validArmor.includes(char.armor)) {
-            errors.push(prefix + 'Неверный тип брони.');
-        }
-
-        const validShield = ['none', 'small', 'medium', 'large'];
-        if (!validShield.includes(char.shield)) {
-            errors.push(prefix + 'Неверный тип щита.');
-        }
-
-        const validAmulet = ['none', 'amulet', 'talisman', 'apotrop'];
-        if (!validAmulet.includes(char.amulet)) {
-            errors.push(prefix + 'Неверный тип амулета.');
-        }
-
-        if (char.mechanical && char.weaponType !== 'ranged') {
-            errors.push(prefix + 'Механическое оружие может быть только дальним.');
-        }
-
-        if (char.mechanical && char.attackType !== 'normal') {
-            errors.push(prefix + 'Механическое оружие может использовать только обычную атаку.');
-        }
-
-        if (char.dual && char.shield !== 'none') {
-            errors.push(prefix + 'Нельзя использовать два оружия и щит одновременно.');
-        }
-
-        if (char.dual && char.weaponSize !== 'light' && !char.dualSkill) {
-            errors.push(prefix + 'Для использования двух оружий среднего размера требуется навык.');
-        }
-
-        if (char.fencing && char.weaponType !== 'melee') {
-            errors.push(prefix + 'Фехтование возможно только с ближним оружием.');
-        }
-    });
-
-    return errors;
-}
-
-function calculate() {
-    let errorDiv = document.getElementById('errors');
-    if (!errorDiv) {
-        errorDiv = document.createElement('div');
-        errorDiv.id = 'errors';
-        const results = document.getElementById('results');
-        if (results) {
-            results.parentNode.insertBefore(errorDiv, results);
+            actor.hasAttacked = true;
+            actor.consumeBonuses();
+            target.consumeBonuses();
+        } else if (useFullDefense) {
+            actor.usedFullDefenseLastTurn = true;
+            actor.defenseStanceBonus = 5;
+            actor.hasAttacked = true;
+            actor.hasMoved = true;
+            this.log(`  [ACTION] Глухая оборона (+5 к защите).`);
+            actor.consumeBonuses();
+        } else if (actionType === 'move_attack') {
+            actor.hasMoved = true;
+            actor.engagedEnemyId = target.id;
+            this.log(`  [MOVE] ${actor.name} сближается с ${target.name} и атакует.`);
+            this.performAttack(actor, target, 'normal');
         } else {
-            document.body.appendChild(errorDiv);
+            this.performAttack(actor, target, attackSubType);
         }
     }
 
-    const validationErrors = validate();
-    if (validationErrors.length > 0) {
-        errorDiv.innerHTML = '<h3>Ошибки валидации:</h3><ul>' + validationErrors.map(e => '<li>' + escapeHtml(e) + '</li>').join('') + '</ul>';
-        document.getElementById('results').style.display = 'none';
-        return;
-    } else {
-        errorDiv.innerHTML = '';
-    }
+    performAttack(attacker, defender, attackType) {
+        attacker.hasAttacked = true;
 
-    const stats = characters.map(char => computeStats(char));
-    const n = characters.length;
-    const matrix = Array.from({ length: n }, () => Array(n).fill(0));
+        const isDual = attacker.base.dual;
+        const isDualSkill = attacker.base.dualSkill;
+        const canDualSecond = (isDual && attacker.base.weaponSize === 'light') || (isDual && isDualSkill);
+        const movedThisTurn = attacker.hasMoved;
 
-    for (let i = 0; i < n; i++) {
-        const attacker = characters[i];
-        const attStats = stats[i];
-        for (let j = 0; j < n; j++) {
-            if (i === j) continue;
-            const targetStats = stats[j];
-            let def;
-            if (attacker.weaponType === 'melee') def = targetStats.meleeDef;
-            else if (attacker.weaponType === 'ranged') def = targetStats.rangedDef;
-            else def = targetStats.magicDef;
+        const isSpecialAttack = (attackType === 'powerful' || attackType === 'accurate' || attackType === 'flurry' || attackType === 'piercing');
+        const allowDualSecond = canDualSecond && !movedThisTurn && !isSpecialAttack;
 
-            const prob = hitProbability(attStats.totalAcc, def);
-            const rawDamage = attStats.totalDmg;
-            const armor = (attacker.weaponType === 'magic') ? targetStats.magArmor : targetStats.physArmor;
-            const effectiveDamage = Math.max(1, rawDamage - armor);
-            matrix[i][j] = effectiveDamage * prob;
+        let attacks = [{
+            isSecond: false
+        }];
+        if (allowDualSecond) {
+            attacks.push({
+                isSecond: true
+            });
         }
+
+        attacks.forEach((atk, idx) => {
+            if (attacker.isDowned || defender.isDowned) return;
+
+            const isMeleeAttack = attacker.base.weaponType === 'melee';
+            const defenseLimitExceeded = isMeleeAttack && defender.successfulMeleeDefenses >= 2;
+
+            let hit = false;
+            let res = null;
+            let isGuaranteed = false;
+            let usedAttackType = attackType;
+
+            if (defenseLimitExceeded) {
+                hit = true;
+                isGuaranteed = true;
+                usedAttackType = 'normal';
+                this.log(`  [ГАРАНТ] ${attacker.name} автоматически попадает (лимит защит ${defender.name}).`);
+            } else {
+                const attDet = attacker.getAccuracyDetails(attacker.base.weaponType, attackType);
+
+                const parryDet = defender.getDefenseDetails('parry', attacker.base.weaponType);
+                const dodgeDet = defender.getDefenseDetails('dodge', attacker.base.weaponType);
+                const blockDet = defender.getDefenseDetails('block', attacker.base.weaponType);
+                const willDet = defender.getDefenseDetails('will', attacker.base.weaponType);
+
+                let defType = 'will';
+                let defDet = willDet;
+
+                if (attacker.base.weaponType === 'magic' && defender.base.weaponType === 'magic') {
+                    defType = 'counter';
+                } else if (attacker.base.weaponType !== 'magic') {
+                    const options = [{
+                        t: 'parry',
+                        d: parryDet
+                    },
+                        {
+                            t: 'dodge',
+                            d: dodgeDet
+                        },
+                        {
+                            t: 'block',
+                            d: blockDet
+                        }
+                    ].filter(o => o.d !== null);
+
+                    if (options.length > 0) {
+                        options.sort((a, b) => b.d.total - a.d.total);
+                        defType = options[0].t;
+                        defDet = options[0].d;
+                    }
+                }
+
+                res = resolveContest(attDet, defDet);
+                hit = (res.winner === 'attack');
+
+                const attStr = `Кубик [${res.rollA}] + ${attDet.base} (Характеристика) ${attDet.typeMod >= 0 ? '+' : ''}${attDet.typeMod} (Тип) ${attDet.effects !== 0 ? (attDet.effects >= 0 ? '+' : '') + attDet.effects + ' (Эфф)' : ''} = ${res.finalAtt}`;
+
+                const defParts = [];
+                defParts.push(`${defDet.baseStat} (Характеристика)`);
+                if (defDet.shieldMod) defParts.push(`${defDet.shieldMod} (Щит)`);
+                if (defDet.penalty) defParts.push(`${defDet.penalty} (Штр)`);
+                if (defDet.effects) defParts.push(`${defDet.effects >= 0 ? '+' : ''}${defDet.effects} (Эфф)`);
+                const defStr = `Кубик [${res.rollD}] + ${defParts.join(' ')} = ${res.finalDef}`;
+
+                let logMsg = `  [ATTACK] ${attacker.name} vs ${defender.name} (${attackType}): ${attStr} vs ${defStr} -> `;
+
+                if (hit) {
+                    logMsg += `ПОПАДАНИЕ${res.isCrit ? ' (КРИТ!)' : ''}`;
+                } else {
+                    logMsg += `ПРОМАХ${res.isCritFail ? ' (КРИТ-ПРОВАЛ!)' : ''}`;
+                    if (defType === 'dodge') {
+                        defender.nextRollBonus += 5;
+                        logMsg += ` | Уклонение!`;
+                    } else if (defType === 'parry') {
+                        attacker.incomingAttackPenalty += 5;
+                        logMsg += ` | Парирование!`;
+                    } else if (defType === 'counter') {
+                        attacker.incomingAttackPenalty += 5;
+                        logMsg += ` | Контрзаклинание!`;
+                    }
+                }
+                this.log(logMsg);
+
+                if (!hit && isMeleeAttack) {
+                    defender.successfulMeleeDefenses++;
+                    this.log(`  [DEF COUNT] ${defender.name}: ${defender.successfulMeleeDefenses}/2`);
+                }
+
+                attacker.consumeBonuses();
+                defender.consumeBonuses();
+            }
+
+            if (hit || isGuaranteed) {
+                let dmg = attacker.getDamage(attacker.base.weaponType, attacker.base.weaponSize, usedAttackType, atk.isSecond);
+                const armorVal = (attacker.base.weaponType === 'magic') ? defender.getStats().magArmor : defender.getStats().physArmor;
+                const actualDmg = Math.max(1, dmg - armorVal);
+
+                defender.currentHp -= actualDmg;
+                let logMsg = `  [DAMAGE] Урон: ${dmg} - ${armorVal} = ${actualDmg}. HP: ${defender.currentHp}`;
+                if (isGuaranteed) logMsg = `  [ГАРАНТ] ` + logMsg;
+                this.log(logMsg);
+
+                if (defender.currentHp <= 0) {
+                    defender.isDowned = true;
+                    defender.currentHp = 0;
+                    this.log(`  [НОКАУТ!] ${defender.name} повержен!`);
+                    if (attacker.engagedEnemyId === defender.id) {
+                        attacker.engagedEnemyId = null;
+                    }
+                }
+            }
+
+            if (attacker.base.mechanical && attacker.base.weaponType === 'ranged' && idx === 0) {
+                if (!attacker.hasMoved) {
+                    this.log(`  [RELOAD] Мгновенная перезарядка.`);
+                } else {
+                    attacker.needsReload = true;
+                    this.log(`  [WARNING] Нужна перезарядка в след. ход.`);
+                }
+            }
+        });
     }
-
-    const players = characters.map((c, idx) => ({ idx, side: c.side })).filter(p => p.side === 1);
-    const enemies = characters.map((c, idx) => ({ idx, side: c.side })).filter(p => p.side === 2);
-
-    const totalHpPlayers = players.reduce((sum, p) => sum + stats[p.idx].hp, 0);
-    const totalHpEnemies = enemies.reduce((sum, e) => sum + stats[e.idx].hp, 0);
-
-    let bestPlayerDmg = 0, worstPlayerDmg = 0;
-    players.forEach(p => {
-        const dmgToEnemies = enemies.map(e => matrix[p.idx][e.idx]);
-        if (dmgToEnemies.length) {
-            bestPlayerDmg += Math.max(...dmgToEnemies);
-            worstPlayerDmg += Math.min(...dmgToEnemies);
-        }
-    });
-    const avgPlayerDmg = (bestPlayerDmg + worstPlayerDmg) / 2;
-
-    let bestEnemyDmg = 0, worstEnemyDmg = 0;
-    enemies.forEach(e => {
-        const dmgToPlayers = players.map(p => matrix[e.idx][p.idx]);
-        if (dmgToPlayers.length) {
-            bestEnemyDmg += Math.max(...dmgToPlayers);
-            worstEnemyDmg += Math.min(...dmgToPlayers);
-        }
-    });
-    const avgEnemyDmg = (bestEnemyDmg + worstEnemyDmg) / 2;
-
-    const roundsPlayerAvg = avgPlayerDmg > 0 ? totalHpEnemies / avgPlayerDmg : Infinity;
-    const roundsEnemyAvg = avgEnemyDmg > 0 ? totalHpPlayers / avgEnemyDmg : Infinity;
-    const ratio = roundsPlayerAvg / roundsEnemyAvg;
-
-    let category, categoryClass, desc;
-    if (ratio < 0.67) {
-        category = 'Лёгкий бой';
-        categoryClass = 'category-easy';
-        desc = 'Игроки побеждают как минимум в 1.5 раза быстрее врагов (средний сценарий).';
-    } else if (ratio < 1.5) {
-        category = 'Равный бой';
-        categoryClass = 'category-balanced';
-        desc = 'Шансы примерно равны (средний сценарий).';
-    } else if (ratio < 2.0) {
-        category = 'Трудный бой';
-        categoryClass = 'category-hard';
-        desc = 'Враги побеждают в 1.5–2 раза быстрее игроков, высок риск поражения (средний сценарий).';
-    } else {
-        category = 'Смертельный бой';
-        categoryClass = 'category-deadly';
-        desc = 'Враги побеждают более чем вдвое быстрее, победа игроков маловероятна (средний сценарий).';
-    }
-
-    let mostVulnerable = { name: '', ratio: Infinity };
-    players.forEach(p => {
-        const totalDmgToPlayer = enemies.reduce((sum, e) => sum + matrix[e.idx][p.idx], 0);
-        const r = totalDmgToPlayer > 0 ? stats[p.idx].hp / totalDmgToPlayer : Infinity;
-        if (r < mostVulnerable.ratio) mostVulnerable = { name: characters[p.idx].name, ratio: r };
-    });
-
-    let mostDangerous = { name: '', total: -Infinity };
-    enemies.forEach(e => {
-        const totalDmgToPlayers = players.reduce((sum, p) => sum + matrix[e.idx][p.idx], 0);
-        if (totalDmgToPlayers > mostDangerous.total) mostDangerous = { name: characters[e.idx].name, total: totalDmgToPlayers };
-    });
-
-    let statsHtml = '<h3>Характеристики персонажей</h3><table><tr><th>Имя</th><th>Стор.</th><th>ОЗ</th><th>Точн.</th><th>База урона</th><th>Урон/ход</th><th>Защ(ближ)</th><th>Защ(даль)</th><th>Защ(маг)</th><th>Физ.бр</th><th>Маг.бр</th></tr>';
-    characters.forEach((c, idx) => {
-        const s = stats[idx];
-        statsHtml += `<tr><td>${escapeHtml(c.name)}</td><td>${c.side === 1 ? 'Игрок' : 'Враг'}</td><td>${s.hp}</td><td>${s.totalAcc}</td><td>${s.baseFormula}</td><td>${s.totalDmg.toFixed(2)}</td><td>${s.meleeDef > -999 ? s.meleeDef : 'нет'}</td><td>${s.rangedDef > -999 ? s.rangedDef : 'нет'}</td><td>${s.magicDef}</td><td>${s.physArmor}</td><td>${s.magArmor}</td></tr>`;
-    });
-    statsHtml += '</table>';
-
-    let matrixHtml = '<h3>Матрица ожидаемого урона за ход</h3><table><tr><th>Атакующий \\ Цель</th>';
-    characters.forEach(c => matrixHtml += `<th>${escapeHtml(c.name)}</th>`);
-    matrixHtml += '</tr>';
-    for (let i = 0; i < n; i++) {
-        matrixHtml += `<tr><td>${escapeHtml(characters[i].name)}</td>`;
-        for (let j = 0; j < n; j++) {
-            matrixHtml += `<td>${matrix[i][j].toFixed(2)}</td>`;
-        }
-        matrixHtml += '</tr>';
-    }
-    matrixHtml += '</table>';
-
-    const metricsHtml = `
-        <h3>Анализ боя (средний сценарий)</h3>
-        <p>Суммарное ОЗ игроков: <strong>${totalHpPlayers}</strong></p>
-        <p>Суммарное ОЗ врагов: <strong>${totalHpEnemies}</strong></p>
-        <p>Средний суммарный урон игроков/ход: <strong>${avgPlayerDmg.toFixed(2)}</strong></p>
-        <p>Средний суммарный урон врагов/ход: <strong>${avgEnemyDmg.toFixed(2)}</strong></p>
-        <p>Время победы игроков: <strong>${roundsPlayerAvg === Infinity ? '∞' : roundsPlayerAvg.toFixed(2)}</strong> раундов</p>
-        <p>Время победы врагов: <strong>${roundsEnemyAvg === Infinity ? '∞' : roundsEnemyAvg.toFixed(2)}</strong> раундов</p>
-        <div class="category ${categoryClass}">Категория: ${category}</div>
-        <p>${desc}</p>
-        <p>Самый уязвимый игрок: <strong>${escapeHtml(mostVulnerable.name)}</strong> (ОЗ / ожидаемый урон по нему = ${mostVulnerable.ratio.toFixed(2)})</p>
-        <p>Самый опасный враг: <strong>${escapeHtml(mostDangerous.name)}</strong> (суммарный урон по игрокам за ход = ${mostDangerous.total.toFixed(2)})</p>
-    `;
-
-    document.getElementById('stats-display').innerHTML = statsHtml;
-    document.getElementById('matrix-display').innerHTML = matrixHtml;
-    document.getElementById('metrics-display').innerHTML = metricsHtml;
-    document.getElementById('results').style.display = 'block';
 }
 
-window.onload = initExamples;
+function runSimulationBatch() {
+    const count = parseInt(document.getElementById('sim-count').value) || 500;
+    const aiLevel = document.getElementById('ai-difficulty').value;
+
+    if (characters.length < 2) {
+        alert("Нужно минимум 2 персонажа!");
+        return;
+    }
+
+    let playerWins = 0,
+        totalRounds = 0;
+    let logs = [];
+
+    for (let i = 0; i < count; i++) {
+        let lastLog = "";
+        const logCallback = (msg) => {
+            lastLog += msg + "\n";
+        };
+        const sim = new BattleSimulator(characters, aiLevel, logCallback);
+        const res = sim.run();
+        if (res === 'players_win') playerWins++;
+        totalRounds += sim.round;
+
+        if (i >= count - MAX_HISTORY) {
+            logs.push(lastLog);
+        }
+    }
+
+    battleLogsHistory = logs.slice(-MAX_HISTORY);
+    currentLogIndex = battleLogsHistory.length - 1;
+
+    const winRate = (playerWins / count) * 100;
+    document.getElementById('sim-runs-display').innerText = count;
+    const wrEl = document.getElementById('win-rate');
+    wrEl.innerText = winRate.toFixed(1) + '%';
+    wrEl.style.color = winRate > 50 ? '#a5d6a5' : '#ef9a9a';
+    document.getElementById('avg-rounds').innerText = (totalRounds / count).toFixed(1) + ' раундов';
+
+    const catEl = document.getElementById('battle-category');
+    let cat = 'category-balanced',
+        txt = 'Равный бой';
+    if (winRate > 80) {
+        cat = 'category-easy';
+        txt = 'Лёгкий бой';
+    } else if (winRate <= 25) {
+        cat = 'category-deadly';
+        txt = 'Смертельный бой';
+    } else if (winRate <= 45) {
+        cat = 'category-hard';
+        txt = 'Трудный бой';
+    }
+    catEl.className = `category ${cat}`;
+    catEl.innerText = txt;
+
+    document.getElementById('results').style.display = 'block';
+
+    let tacticText = '';
+    if (aiLevel === 'basic') tacticText = 'Хаотичная';
+    else if (aiLevel === 'tactical') tacticText = 'Оптимальная';
+    else if (aiLevel === 'coordinated') tacticText = 'Координированная';
+    document.getElementById('stats-details').innerHTML = `
+    <p>Побед игроков: <strong>${playerWins}</strong></p>
+    <p>Тактика: <strong>${tacticText}</strong></p>
+  `;
+
+    if (battleLogsHistory.length > 0) {
+        displayLogByIndex(currentLogIndex);
+        updateLogNavButtons();
+    }
+}
+
+window.onload = function() {
+    initExamples();
+};

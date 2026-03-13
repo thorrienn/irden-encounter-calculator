@@ -1,120 +1,127 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Калькулятор сложности боя</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>Irden Encounter Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <h1>Калькулятор сложности боя</h1>
+<div class="controls-panel">
+    <div class="control-group">
+        <label>Сложность ИИ Врагов:</label>
+        <select id="ai-difficulty">
+            <option value="basic">Базовый (Хаотичный)</option>
+            <option value="tactical" selected>Тактический (Оптимальный)</option>
+            <option value="coordinated">Координированный (Фокус + Баффы)</option>
+        </select>
+    </div>
+    <div class="control-group">
+        <label>Количество симуляций:</label>
+        <input type="number" id="sim-count" value="500" min="100" max="5000" step="100">
+    </div>
+    <button class="btn" onclick="runSimulationBatch()">Запустить Симуляцию</button>
+</div>
 <div class="character-panel">
-  <table id="char-table">
-    <thead>
-    <tr>
-      <th>Имя</th>
-      <th>Сторона</th>
-      <th>STR</th>
-      <th>END</th>
-      <th>PER</th>
-      <th>REF</th>
-      <th>MAG</th>
-      <th>WIL</th>
-      <th>ОЗ</th>
-      <th>Тип оружия</th>
-      <th>Размер</th>
-      <th>Фехт.</th>
-      <th>Парное</th>
-      <th>Мех.</th>
-      <th>Навык парн.</th>
-      <th>Тип атаки</th>
-      <th>Броня</th>
-      <th>Щит</th>
-      <th>Амулет</th>
-      <th>+Урон</th>
-      <th>+Точн.</th>
-      <th>Физ.каст</th>
-      <th>Маг.каст</th>
-      <th>Защ. END</th>
-      <th>Защ. REF</th>
-      <th>Защ. WIL</th>
-      <th>✖</th>
-    </tr>
-    </thead>
-    <tbody id="char-tbody"></tbody>
-  </table>
-  <button class="btn" onclick="addCharacter()">Добавить персонажа</button>
-  <button class="btn" onclick="calculate()">Рассчитать бой</button>
+    <div style="overflow-x: auto;">
+        <table id="char-table">
+            <thead>
+            <tr>
+                <th>Имя</th>
+                <th>Сторона</th>
+                <th>STR</th>
+                <th>END</th>
+                <th>PER</th>
+                <th>REF</th>
+                <th>MAG</th>
+                <th>WIL</th>
+                <th>DET</th>
+                <th>Защ. END</th>
+                <th>Защ. REF</th>
+                <th>Защ. WIL</th>
+                <th>Защ. DET</th>
+                <th title="Перезаписать здоровье">ОЗ</th>
+                <th>Оружие</th>
+                <th>Размер</th>
+                <th>Фехт.</th>
+                <th>Парное</th>
+                <th>Мех.</th>
+                <th>Навык парн.</th>
+                <th title="Игнорировать штрафы брони">Игнор. штраф</th>
+                <th>Броня</th>
+                <th>Щит</th>
+                <th>Амулет</th>
+                <th>+Урон</th>
+                <th>+Точн.</th>
+                <th>Физ.бр</th>
+                <th>Маг.бр</th>
+                <th>✖</th>
+            </tr>
+            </thead>
+            <tbody id="char-tbody"></tbody>
+        </table>
+    </div>
+    <div style="margin-top: 10px;">
+        <button class="btn" onclick="addCharacter()">Добавить персонажа</button>
+        <button class="btn btn-secondary" onclick="initExamples()">Загрузить примеры</button>
+    </div>
 </div>
 <div id="results" class="results" style="display:none;">
-  <h2>Результаты расчёта</h2>
-  <div class="stats-panel" id="stats-display"></div>
-  <div class="matrix-panel" id="matrix-display"></div>
-  <div class="metrics-panel" id="metrics-display"></div>
+    <h2>Результаты Симуляции (<span id="sim-runs-display">0</span> боев) </h2>
+    <div class="metrics-summary">
+        <div class="stat-card">
+            <h3>Победа Игроков</h3>
+            <div id="win-rate" class="big-stat">0%</div>
+        </div>
+        <div class="stat-card">
+            <h3>Средняя длительность</h3>
+            <div id="avg-rounds" class="big-stat">0 раундов</div>
+        </div>
+        <div class="stat-card">
+            <h3>Категория боя</h3>
+            <div id="battle-category" class="category category-balanced">Равный бой</div>
+        </div>
+    </div>
+    <div class="logs-panel">
+        <h3>Детальная статистика</h3>
+        <div id="stats-details"></div>
+        <h3>Журнал последних боев (Лог)</h3>
+        <div class="log-navigation" style="margin-bottom: 8px; display: flex; gap: 8px; align-items: center;">
+            <button class="btn-small" id="prev-log-btn" onclick="showPrevLog()" disabled>← Пред.</button>
+            <span id="log-index-display">1/1</span>
+            <button class="btn-small" id="next-log-btn" onclick="showNextLog()" disabled>След. →</button>
+        </div>
+        <div id="battle-log" class="battle-log"></div>
+    </div>
 </div>
 <div class="docs">
-  <h3>О калькуляторе</h3>
-  <p>
-    <strong>Формулы:</strong>
-  </p>
-  <ul>
-    <li>
-      <strong>ОЗ</strong> = 20 + END ( + индивидуальный бонус).
-    </li>
-    <li>
-      <strong>Точность:</strong> для ближнего боя — STR (или PER, если фехтовальное), для дальнего — PER, для магии — MAG. Добавляется бонус точности.
-    </li>
-    <li>
-      <strong>База урона:</strong> ближний бой — (STR+END)/4 (округление вниз); дальний — (PER+REF)/4; магия — (MAG+WIL)/4.
-    </li>
-    <li>
-      <strong>Модификатор оружия:</strong> берётся из таблицы (ближнее: 4/6/8, дальнее: 3/5/0, магия: 3/5/7). Для механического дальнего оружия используется фиксированный урон (8/12/28).
-    </li>
-    <li>
-      <strong>Парное оружие:</strong> добавляется вторая атака с половинным уроном (округление вниз).
-    </li>
-    <li>
-      <strong>Защита:</strong>
-      <ul>
-        <li>Парирование = END + бонус щита + штраф брони (доступно при ближнем оружии или щите).</li>
-        <li>Уклонение = REF + штраф брони (доступно, если броня не тяжёлая и щит не большой).</li>
-        <li>Блокирование = END + бонус блокирования щита + штраф брони (только для среднего/большого щита).</li>
-      </ul> Итоговая защита: для ближнего боя — максимум парирования и уклонения; для дальнего — максимум уклонения и блокирования (если доступно); для магии — WIL.
-    </li>
-    <li>
-      <strong>Вероятность попадания:</strong> точный перебор бросков d20 с учётом критических успехов/провалов (20 — всегда успех, 1 — всегда провал, равенство перебрасывается).
-    </li>
-    <li>
-      <strong>Ожидаемый урон по цели:</strong> (урон атакующего - броня цели, минимум 1) × вероятность попадания.
-    </li>
-  </ul>
-  <h3>Матрица ожидаемого урона</h3>
-  <p>В матрице на пересечении строки (атакующий) и столбца (цель) указан средний урон за ход. Рассчитывается как <code>max(1, урон_атакующего - броня_цели) × вероятность_попадания</code>. Вероятность попадания вычисляется перебором всех комбинаций бросков d20 (20×20) с учётом критических успехов/провалов и перебросом равенств. </p>
-  <h3>Самый уязвимый игрок</h3>
-  <p>Для каждого игрока вычисляется сумма ожидаемого урона по нему от всех врагов за один ход. Отношение <code>ОЗ_игрока / сумма_урона_от_врагов</code> показывает количество раундов, которое игрок проживёт при фокусе всех врагов. Игрок с минимальным значением является самым уязвимым. </p>
-  <h3>Самый опасный враг</h3>
-  <p>Для каждого врага вычисляется сумма ожидаемого урона, который он наносит по всем игрокам за один ход. Враг с максимальной суммой является самым опасным для отряда.</p>
-  <h3>Средний сценарий</h3>
-  <p>Средний сценарий = <code>(максимальный_суммарный_урон_стороны + минимальный_суммарный_урон_стороны) / 2</code>. Максимальный урон — сумма по каждому атакующему его наибольшего ожидаемого урона по любой цели (оптимистичный прогноз). Минимальный — сумма наименьших ожидаемых уронов (пессимистичный прогноз). Используется для расчёта времени победы и категории боя. </p>
-  <p>
-    <strong>Категория боя</strong> оценивается по коэффициенту R – то есть, по тому, насколько быстрее враги способны убить игроков, чем игроки врагов (по среднему урону за ход).
-  </p>
-  <ul>
-    <li>
-      <strong>Легкий бой:</strong> R &lt; 0.67 (игроки быстрее минимум в 1.5 раза).
-    </li>
-    <li>
-      <strong>Равный бой:</strong> 0.67 ≤ R &lt; 1.5 (шансы примерно равны).
-    </li>
-    <li>
-      <strong>Трудный бой:</strong> 1.5 ≤ R &lt; 2.0 (враги быстрее в 1.5–2 раза).
-    </li>
-    <li>
-      <strong>Смертельный бой:</strong> R ≥ 2.0 (враги минимум вдвое быстрее, остается только молится).
-    </li>
-  </ul>
+    <h3>Правила Симуляции</h3>
+    <ul>
+        <li>
+            <strong>Инициатива:</strong> Чистый бросок d20 в начале боя. Порядок фиксирован.
+        </li>
+        <li>
+            <strong>Ничья:</strong> При равных суммах бросков происходит переброс до победы.
+        </li>
+        <li>
+            <strong>Криты:</strong> Nat 20 vs не-20 = авто-попадание. Nat 1 vs не-1 = авто-промах. Если оба 20 или оба 1 — сравнение модификаторов.
+        </li>
+        <li>
+            <strong>Механическое оружие:</strong> После выстрела требуется перезарядка. Если в ходу не было движения, перезарядка бесплатна. Иначе тратится действие в следующий ход.
+        </li>
+        <li>
+            <strong>Движение:</strong> Сближение с дальним противником требует Полного действия. Атака возможна только в следующем раунде.
+        </li>
+        <li>
+            <strong>Баффы:</strong> Успешное уклонение дает +5 к следующему действию. Успешное парирование дает -5 следующей атаке противника (глобально).
+        </li>
+        <li>
+            <strong>ИИ:</strong> Автоматически выбирает тип удара (Точный/Сильный/Шквал) в зависимости от защиты врага и брони.
+        </li>
+    </ul>
 </div>
 <script src="script.js"></script>
 </body>
